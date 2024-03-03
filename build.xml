@@ -60,7 +60,7 @@
     
     <target name="fill-db">
         <sql driver="org.postgresql.Driver" 
-             url="jdbc:postgresql://localhost:5432/postgres" 
+             url="jdbc:postgresql://localhost:5432/webforum_db" 
              userid="postgres" 
              password="postgres" 
              onerror="stop">
@@ -69,6 +69,22 @@
             </classpath>
             <fileset dir="sql">
                 <include name="db_fill.sql"/>
+            </fileset>
+        </sql>
+    </target>
+    
+    <target name="dump-db">
+        <sql driver="org.postgresql.Driver" 
+             url="jdbc:postgresql://localhost:5432/webforum_db" 
+             userid="postgres" 
+             password="postgres" 
+             print="true"
+             onerror="stop">
+            <classpath>
+                <pathelement location="lib/postgresql-42.7.2.jar"/>
+            </classpath>
+            <fileset dir="sql">
+                <include name="db_dump.sql"/>
             </fileset>
         </sql>
     </target>
