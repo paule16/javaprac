@@ -12,7 +12,7 @@ CREATE TABLE "sections" (
     section_id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
-    permissions JSON
+    permissions JSON -- { <role>: ('r'|'w'|'e'), ... }
 );
 
 CREATE TABLE "discussions" (
@@ -21,8 +21,8 @@ CREATE TABLE "discussions" (
     description TEXT,
     user_id integer REFERENCES "users" NOT NULL,
     creation_time TIMESTAMP NOT NULL,
-    permissions JSON,
-    section_id integer REFERENCES "sections" NOT NULL
+    section_id integer REFERENCES "sections" NOT NULL,
+    permissions JSON -- { <role>: ('r'|'w'|'e'), ... }
 );
 
 CREATE TABLE "messages" (
@@ -34,9 +34,9 @@ CREATE TABLE "messages" (
     dislikes_num INTEGER NOT NULL DEFAULT 0,
     creation_time TIMESTAMP NOT NULL,
     discussion_id INTEGER REFERENCES "discussions" NOT NULL,
-    quote_msg_id INTEGER REFERENCES "messages",
-    quote_start INTEGER,
-    quote_end INTEGER
+    quote_msg_id INTEGER REFERENCES "messages", -- points to the quoted message
+    quote_start INTEGER, -- offset of the quotation from the start of the quoted message
+    quote_end INTEGER -- number of the last quoted character in the quoted message
 );
 
 CREATE TABLE banned_users (
