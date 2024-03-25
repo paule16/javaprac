@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.javaprac</groupId>
+    <artifactId>webforum</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>6.4.4.Final</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>7.9.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version>
+            <scope>runtime</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>sql-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>42.7.3</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>create-db</id>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <driver>org.postgresql.Driver</driver>
+                            <url>jdbc:postgresql://localhost:5432/postgres</url>
+                            <username>paul</username>
+                            <password>postgres</password>
+                            <autocommit>true</autocommit>
+                            <fileset>
+                                <basedir>${project.basedir}/sql</basedir>
+                                <includes>
+                                    <include>db_create.sql</include>
+                                </includes>
+                            </fileset>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>drop-db</id>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <driver>org.postgresql.Driver</driver>
+                            <url>jdbc:postgresql://localhost:5432/postgres</url>
+                            <username>paul</username>
+                            <password>postgres</password>
+                            <autocommit>true</autocommit>
+                            <fileset>
+                                <basedir>${project.basedir}/sql</basedir>
+                                <includes>
+                                    <include>db_drop.sql</include>
+                                </includes>
+                            </fileset>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>init-db</id>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <driver>org.postgresql.Driver</driver>
+                            <url>jdbc:postgresql://localhost:5432/webforum</url>
+                            <username>paul</username>
+                            <password>postgres</password>
+                            <autocommit>false</autocommit>
+                            <fileset>
+                                <basedir>${project.basedir}/sql</basedir>
+                                <includes>
+                                    <include>db_init.sql</include>
+                                </includes>
+                            </fileset>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>fill-db</id>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <driver>org.postgresql.Driver</driver>
+                            <url>jdbc:postgresql://localhost:5432/webforum</url>
+                            <username>paul</username>
+                            <password>postgres</password>
+                            <autocommit>false</autocommit>
+                            <fileset>
+                                <basedir>${project.basedir}/sql</basedir>
+                                <includes>
+                                    <include>db_fill.sql</include>
+                                </includes>
+                            </fileset>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>
