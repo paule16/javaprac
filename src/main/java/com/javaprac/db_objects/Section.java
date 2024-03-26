@@ -57,6 +57,11 @@ public class Section {
         this.description = description;
     }
 
+    public int getId()
+    {
+        return id;
+    }
+
     public String getName()
     {
         return name;
@@ -77,7 +82,7 @@ public class Section {
         return discussions;
     }
 
-    public boolean can_read(User user)
+    public boolean canRead(User user)
     {
         if (user.getRoles().contains("admin"))
         {
@@ -96,7 +101,7 @@ public class Section {
         return false;
     }
 
-    public boolean can_write(User user)
+    public boolean canWrite(User user)
     {
         if (user.getRoles().contains("admin"))
         {
@@ -123,7 +128,7 @@ public class Section {
         return false;
     }
 
-    public boolean can_edit(User user)
+    public boolean canEdit(User user)
     {
         if (user.getRoles().contains("admin"))
         {

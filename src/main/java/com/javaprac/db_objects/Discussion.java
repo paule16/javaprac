@@ -40,11 +40,15 @@ public class Discussion {
     @OneToMany(mappedBy = "discussion")
     List<Message> messages;
 
-    public Discussion(String label, String description, Map<String, Permission> perm)
+    public Discussion(String label,
+                      String description,
+                      Map<String, Permission> perm,
+                      Section section)
     {
         this.label = label;
         this.description = description;
         this.permissions = perm;
+        this.section = section;
         this.creation_time = LocalDateTime.now();
     }
 
@@ -53,6 +57,11 @@ public class Discussion {
         this.label = label;
         this.description = description;
         this.creation_time = LocalDateTime.now();
+    }
+
+    public int getId()
+    {
+        return id;
     }
 
     public String getTheme()
@@ -70,6 +79,11 @@ public class Discussion {
         return creator;
     }
 
+    public Section getSection()
+    {
+        return section;
+    }
+
     public List<Message> getMessages()
     {
         return messages;
@@ -80,9 +94,9 @@ public class Discussion {
         return creation_time;
     }
 
-    public boolean can_read(User user)
+    public boolean canRead(User user)
     {
-        if (user.getRoles().contains("admin"))
+        if (user.getRoles().contains("admin") || user == creator)
         {
             return true;
         }
@@ -103,9 +117,9 @@ public class Discussion {
         return false;
     }
 
-    public boolean can_write(User user)
+    public boolean canWrite(User user)
     {
-        if (user.getRoles().contains("admin"))
+        if (user.getRoles().contains("admin") || user == creator)
         {
             return true;
         }
@@ -126,9 +140,9 @@ public class Discussion {
         return false;
     }
 
-    public boolean can_edit(User user)
+    public boolean canEdit(User user)
     {
-        if (user.getRoles().contains("admin"))
+        if (user.getRoles().contains("admin") || user == creator)
         {
             return true;
         }

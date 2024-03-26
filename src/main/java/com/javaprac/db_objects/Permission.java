@@ -10,6 +10,21 @@ public class Permission {
         READ, WRITE, EDIT
     }
 
+    public static Permission read_only()
+    {
+        return new Permission(Levels.READ);
+    }
+
+    public static Permission read_write()
+    {
+        return new Permission(Levels.WRITE);
+    }
+
+    public static Permission full()
+    {
+        return new Permission(Levels.EDIT);
+    }
+
     public Permission(Levels level)
     {
         this.level = level;
