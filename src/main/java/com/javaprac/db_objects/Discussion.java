@@ -40,11 +40,15 @@ public class Discussion {
     @OneToMany(mappedBy = "discussion")
     List<Message> messages;
 
-    public Discussion(String label, String description, Map<String, Permission> perm)
+    public Discussion(String label,
+                      String description,
+                      Map<String, Permission> perm,
+                      Section section)
     {
         this.label = label;
         this.description = description;
         this.permissions = perm;
+        this.section = section;
         this.creation_time = LocalDateTime.now();
     }
 

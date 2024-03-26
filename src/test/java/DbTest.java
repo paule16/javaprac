@@ -7,8 +7,14 @@ import org.testng.annotations.BeforeGroups;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import com.javaprac.db_interface.DiscussionsManager;
+import com.javaprac.db_interface.MessagesManager;
+import com.javaprac.db_interface.SectionsManager;
 import com.javaprac.db_interface.UsersManager;
+import com.javaprac.db_objects.Discussion;
+import com.javaprac.db_objects.Message;
 import com.javaprac.db_objects.Permission;
+import com.javaprac.db_objects.Section;
 import com.javaprac.db_objects.User;
 
 public class DbTest {
@@ -153,39 +159,23 @@ public class DbTest {
 
     // TODO: change nickname
 
-    @BeforeGroups(groups = {"predefUsers"})
-    public void createUsers()
-    {
-        // TODO
-    }
-
-    @AfterGroups(groups = {"predefUsers"})
-    public void deleteUsers()
-    {
-        // TODO
-    }
-
     @Test(groups = {"predefUsers"}, dataProvider = "sections")
     public void testCreateCheckPermDeleteSection(String name, String description, Map<String, Permission> perm)
     {
-        // TODO: create section
-        // TODO: get section
+        SectionsManager manager = new SectionsManager();
+        Section section = new Section(name, description, perm);
+
+        manager.add(section);
+        manager.flush();
+
+        int id = section.getId();
+
+        Section check = manager.get(Section.class, id);
+        assert(check == section);
 
         // TODO: check permissions for created users
 
         // TODO: delete section
-    }
-
-    @BeforeGroups(groups = {"predefSections"})
-    public void createSections()
-    {
-        // TODO
-    }
-
-    @AfterGroups(groups = {"predefSections"})
-    public void deleteSections()
-    {
-        // TODO
     }
 
     @Test(groups = {"predefUsers", "predefSections"}, dataProvider = "discussions")
@@ -202,18 +192,6 @@ public class DbTest {
         // TODO: delete section
     }
 
-    @BeforeGroups(groups = {"predefDiscussions"})
-    public void createDiscussions()
-    {
-        // TODO
-    }
-
-    @AfterGroups(groups = {"predefDiscussions"})
-    public void deleteDiscussions()
-    {
-        // TODO
-    }
-
     @Test(groups = {"predefUsers", "predefSections", "predefDiscussions"}, dataProvider = "messages")
     public void testCreateDeleteMessage(String text, List<String> attachments)
     {
@@ -226,18 +204,6 @@ public class DbTest {
         // TODO: delete message
     }
 
-    @BeforeGroups(groups = {"predefMessages"})
-    public void createMessages()
-    {
-        // TODO
-    }
-
-    @AfterGroups(groups = {"predefMessages"})
-    public void deleteMessages()
-    {
-        // TODO
-    }
-
     @Test (groups = {"predefUsers", "predefSections", "predefDiscussions", "predefMessages"})
     public void testBan()
     {
@@ -245,4 +211,105 @@ public class DbTest {
     }
 
 
+    @BeforeGroups(groups = {"predefUsers"})
+    public void createUsers()
+    {
+        UsersManager manager = new UsersManager();
+        for (Object[] params : getUsers()) {
+            User user = new User((String)       params[0],
+                                 (String)       params[1],
+                                 (String)       params[2],
+                                 (List<String>) params[3]);
+            manager.add(user);
+        }
+    }
+
+    @BeforeGroups(groups = {"predefSections"})
+    public void createSections()
+    {
+        SectionsManager manager = new SectionsManager();
+        for (Object[] params : getSections()) {
+
+            Section section = new Section((String)                  params[0],
+                                          (String)                  params[1],
+                                          (Map<String, Permission>) params[2]);
+            manager.add(section);
+        }
+    }
+
+    @BeforeGroups(groups = {"predefDiscussions"})
+    public void createDiscussions()
+    {
+        DiscussionsManager manager = new DiscussionsManager();
+        SectionsManager s_manager = new SectionsManager();
+        for (Object[] params : getDiscussions()) {
+            Section section = s_manager.get(Section.class, (Integer) params[3]);
+
+            Discussion discussion = new Discussion((String)                     params[0],
+                                                   (String)                     params[1],
+                                                   (Map<String, Permission>)    params[2],
+                                                   section);
+            manager.add(discussion);
+        }
+    }
+
+    @BeforeGroups(groups = {"predefMessages"})
+    public void createMessages()
+    {
+        MessagesManager manager = new MessagesManager();
+        DiscussionsManager d_manager = new DiscussionsManager();
+        for (Object[] params : getMessages()) {
+            Integer quote_id = (Integer) params[0];
+            Message quoted = null;
+            Discussion discussion = d_manager.get(Discussion.class, (Integer) params[5]);
+
+            if (quote_id != null) {
+                manager.get(Message.class, quote_id);
+            }
+
+            Message message = new Message((String)          params[3],
+                                          quoted,
+                                          (Integer)         params[1],
+                                          (Integer)         params[2],
+                                          (List<String>)    params[4],
+                                          discussion);
+            manager.add(message);
+        }
+    }
+
+    @AfterGroups(groups = {"predefMessages"})
+    public void deleteMessages()
+    {
+        MessagesManager manager = new MessagesManager();
+        for (Message message : manager.getAll(Message.class)) {
+            manager.delete(message);
+        }
+    }
+
+    @AfterGroups(groups = {"predefDiscussions"})
+    public void deleteDiscussions()
+    {
+        DiscussionsManager manager = new DiscussionsManager();
+        for (Discussion discussion : manager.getAll(Discussion.class)) {
+            manager.delete(discussion);
+        }
+    }
+
+    @AfterGroups(groups = {"predefSections"})
+    public void deleteSections()
+    {
+        SectionsManager manager = new SectionsManager();
+        for (Section section : manager.getAll(Section.class)) {
+            manager.delete(section);
+        }
+    }
+
+    @AfterGroups(groups = {"predefUsers"})
+    public void deleteUsers()
+    {
+        UsersManager manager = new UsersManager();
+        for (User user : manager.getAll(User.class)) {
+            manager.delete(user);
+        }
+    }
 }
