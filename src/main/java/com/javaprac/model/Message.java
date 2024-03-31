@@ -47,9 +47,9 @@ public class Message {
 
     public boolean equals(Message oth)
     {
-        if (this == oth) {
-            return true;
-        }
+        // if (this == oth) {
+        //     return true;
+        // }
 
         return oth.id.equals(id) &&
                oth.content.equals(content) &&
@@ -57,7 +57,7 @@ public class Message {
                oth.likes_num.equals(likes_num) &&
                oth.dislikes_num.equals(dislikes_num) &&
                oth.creation_time.equals(creation_time) &&
-               oth.quote.equals(quote) &&
+               ((oth.quote == null && quote == null) || oth.quote.equals(quote)) &&
                oth.discussion.equals(discussion) &&
                oth.creator.equals(creator);
     }
@@ -171,9 +171,9 @@ class Quote implements Serializable {
 
     public boolean equals(Quote oth)
     {
-        if (this == oth) {
-            return true;
-        }
+        // if (this == oth) {
+        //     return true;
+        // }
 
         return oth.start.equals(start) &&
                oth.end.equals(end) &&

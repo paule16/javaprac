@@ -10,7 +10,6 @@ import org.hibernate.type.SqlTypes;
 
 import com.javaprac.Permission;
 
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -52,9 +51,9 @@ public class Discussion {
 
     public boolean equals(Discussion oth)
     {
-        if (this == oth) {
-            return true;
-        }
+        // if (this == oth) {
+        //     return true;
+        // }
 
         return oth.id.equals(id) &&
                oth.label.equals(label) &&
@@ -157,7 +156,7 @@ public class Discussion {
             return true;
         }
 
-        if (user.isBanned()) {
+        if (user.isBanned() || section.isBanned(user)) {
             return false;
         }
 
@@ -183,7 +182,7 @@ public class Discussion {
             return true;
         }
 
-        if (user.isBanned()) {
+        if (user.isBanned() || section.isBanned(user)) {
             return false;
         }
         

@@ -46,9 +46,9 @@ public class User {
 
     public boolean equals(User oth)
     {
-        if (this == oth) {
-            return true;
-        }
+        // if (this == oth) {
+        //     return true;
+        // }
 
         return oth.id.equals(id) &&
                oth.nickname.equals(nickname) &&

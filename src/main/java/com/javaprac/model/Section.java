@@ -1,5 +1,6 @@
 package com.javaprac.model;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import com.javaprac.Permission;
+import com.javaprac.managers.SectionsManager;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -50,9 +52,9 @@ public class Section {
 
     public boolean equals(Section oth)
     {
-        if (this == oth) {
-            return true;
-        }
+        // if (this == oth) {
+        //     return true;
+        // }
 
         return oth.id.equals(id) &&
                oth.name.equals(name) &&
@@ -73,6 +75,7 @@ public class Section {
     {
         this.name = name;
         this.description = description;
+        this.permissions = Map.of();
     }
 
     public int getId()
@@ -147,8 +150,7 @@ public class Section {
 
     public boolean canEdit(User user)
     {
-        if (user.getRoles().contains("admin"))
-        {
+        if (user.getRoles().contains("admin")) {
             return true;
         }
 
@@ -175,5 +177,25 @@ public class Section {
     public void ban(User user)
     {
         banned_users.add(user);
+    }
+
+    public static class ActiveUsersWrapper {
+        public User user;
+        public LocalDateTime min_creation_time;
+        public LocalDateTime max_creation_time;
+        public Long msg_num;
+
+        public ActiveUsersWrapper(User user, LocalDateTime min_time, LocalDateTime max_time, Long msg_num)
+        {
+            this.user = user;
+            this.min_creation_time = min_time;
+            this.max_creation_time = max_time;
+            this.msg_num = msg_num;
+        }
+    }
+
+    public List<ActiveUsersWrapper> getActiveUsers(LocalDateTime from, LocalDateTime to)
+    {
+        return (new SectionsManager()).getActiveUsers(getId(), from, to);
     }
 }

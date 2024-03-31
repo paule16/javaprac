@@ -35,8 +35,7 @@ public abstract class Manager<E, K> {
     public List<E> getAll(Class<E> entityClass)
     {
         em.getTransaction().begin();
-        List<E> result = em.createQuery("SELECT * FROM :name", entityClass)
-            .setParameter("name", entityClass.getName())
+        List<E> result = em.createQuery("FROM " + entityClass.getSimpleName(), entityClass)
             .getResultList();
         em.getTransaction().commit();
         return result;
@@ -82,10 +81,5 @@ class EntityManagerCreator {
     public static EntityManager create()
     {
         return getFactory().createEntityManager();
-    }
-
-    public static Session openSession()
-    {
-        return getFactory().openSession();
     }
 }

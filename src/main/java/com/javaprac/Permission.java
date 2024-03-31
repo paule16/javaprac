@@ -11,11 +11,6 @@ public enum Permission {
         this.id = id;
     }
 
-    public boolean lower(Permission oth)
-    {
-        return this.id < oth.id;
-    }
-
     public boolean allow_write()
     {
         return this.id >= WRITE.id;

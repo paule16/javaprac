@@ -1,5 +1,6 @@
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -469,6 +470,8 @@ public class DbTest {
         assert(message.getAttachments().equals(attachments));
         assert(message.getCreator().equals(creator));
         assert(message.getText().equals(text));
+        assert(message.getQuoted() == null);
+        assert(message.getQuote() == null);
 
         d_manager.refresh(parent_discussion);
         u_manager.refresh(creator);
@@ -479,6 +482,33 @@ public class DbTest {
         m_manager.delete(message);
         message = m_manager.get(Message.class, message.getId());
         assert(message == null);
+
+        d_manager.delete(parent_discussion);
+        s_manager.delete(parent_section);
+        u_manager.delete(creator);
+    }
+
+    @Test
+    public void testGetAll()
+    {
+        List<User> users = new ArrayList<>();
+
+        for (Object[] params : getUsers()) {
+            User user = new User((String) params[0], (String) params[1], (String) params[2], (List<String>) params[3]);
+            users.add(user);
+        }
+
+        UsersManager manager = new UsersManager();
+
+        for (User user : users) {
+            manager.add(user);
+        }
+
+        assert(manager.getAll(User.class).equals(users));
+
+        for (User user : users) {
+            manager.delete(user);
+        }
     }
 
     @Test
@@ -579,5 +609,162 @@ public class DbTest {
         um.delete(user_2);
         um.delete(user_1);
         um.delete(creator);
+    }
+
+    @Test
+    public void testSectionBan()
+    {
+        User user = new User("user", "user@example.com", "password", List.of("role"));
+        User admin = new User("admin", "admin@example.com", "", List.of("admin"));
+        Section section = new Section("section", "description", Map.of("role", Permission.EDIT));
+
+        Discussion user_discussion = new Discussion("1", "", Map.of("role", Permission.EDIT), section, user);
+        Discussion admin_discussion = new Discussion("2", "", Map.of("role", Permission.EDIT), section, admin);
+
+        UsersManager um = new UsersManager();
+        SectionsManager sm = new SectionsManager();
+        DiscussionsManager dm = new DiscussionsManager();
+
+        um.add(user);
+        um.add(admin);
+        sm.add(section);
+        dm.add(user_discussion);
+        dm.add(admin_discussion);
+
+        user = um.get(User.class, user.getId());
+        admin = um.get(User.class, admin.getId());
+        section = sm.get(Section.class, section.getId());
+        user_discussion = dm.get(Discussion.class, user_discussion.getId());
+        admin_discussion = dm.get(Discussion.class, admin_discussion.getId());
+
+        assert(section.canRead(user));
+        assert(section.canWrite(user));
+        assert(section.canEdit(user));
+
+        assert(section.canRead(admin));
+        assert(section.canWrite(admin));
+        assert(section.canEdit(admin));
+
+        assert(user_discussion.canRead(user));
+        assert(user_discussion.canWrite(user));
+        assert(user_discussion.canEdit(user));
+
+        assert(admin_discussion.canRead(user));
+        assert(admin_discussion.canWrite(user));
+        assert(admin_discussion.canEdit(user));
+
+        assert(user_discussion.canRead(admin));
+        assert(user_discussion.canWrite(admin));
+        assert(user_discussion.canEdit(admin));
+
+        section.ban(user);
+        section.ban(admin);
+
+        assert(section.canRead(user));
+        assert(!section.canWrite(user));
+        assert(!section.canEdit(user));
+
+        assert(section.canRead(admin));
+        assert(section.canWrite(admin));
+        assert(section.canEdit(admin));
+
+        assert(user_discussion.canRead(user));
+        assert(user_discussion.canWrite(user));
+        assert(user_discussion.canEdit(user));
+
+        assert(admin_discussion.canRead(user));
+        assert(!admin_discussion.canWrite(user));
+        assert(!admin_discussion.canEdit(user));
+
+        assert(user_discussion.canRead(admin));
+        assert(user_discussion.canWrite(admin));
+        assert(user_discussion.canEdit(admin));
+
+        dm.delete(user_discussion);
+        dm.delete(admin_discussion);
+        sm.delete(section);
+        um.delete(user);
+        um.delete(admin);
+    }
+
+    @Test
+    public void testSectionGetActiveUsers()
+    {
+        User user_1 = new User("user1", "user1@example.com", "", List.of());
+        User user_2 = new User("user2", "user2@example.com", "", List.of());
+        Section section = new Section("section", "");
+        Discussion discussion = new Discussion("label", "", section, user_1);
+
+        UsersManager um = new UsersManager();
+        SectionsManager sm = new SectionsManager();
+        DiscussionsManager dm = new DiscussionsManager();
+        MessagesManager mm = new MessagesManager();
+
+        um.add(user_1);
+        um.add(user_2);
+        sm.add(section);
+        dm.add(discussion);
+
+        LocalDateTime timepoint_1 = LocalDateTime.now();
+
+        Message msg_1 = new Message("  ", List.of(), discussion, user_1);
+        mm.add(msg_1);
+        Message msg_2 = new Message("   ", List.of(), discussion, user_1);
+        mm.add(msg_2);
+
+        LocalDateTime timepoint_2 = LocalDateTime.now();
+
+        Message msg_3 = new Message(" ", List.of(), discussion, user_2);
+        mm.add(msg_3);
+        Message msg_4 = new Message("", List.of(),  discussion, user_1);
+        mm.add(msg_4);
+
+        LocalDateTime timepoint_3 = LocalDateTime.now();
+
+        sm.refresh(section);
+
+        List<Section.ActiveUsersWrapper> first_result = section.getActiveUsers(timepoint_1, timepoint_2);
+        List<Section.ActiveUsersWrapper> second_result = section.getActiveUsers(timepoint_2, timepoint_3);
+        List<Section.ActiveUsersWrapper> third_result = section.getActiveUsers(timepoint_1, timepoint_3);
+
+        assert(first_result.size() == 1);
+        assert(first_result.get(0).user.equals(user_1));
+        assert(first_result.get(0).msg_num == 2);
+        assert(first_result.get(0).min_creation_time.equals(cutNanos(msg_1.getCreationTime())));
+        assert(first_result.get(0).max_creation_time.equals(cutNanos(msg_2.getCreationTime())));
+
+        assert(second_result.size() == 2);
+        assert(second_result.get(1).user.equals(user_2));
+        assert(second_result.get(1).msg_num == 1);
+        assert(second_result.get(1).min_creation_time.equals(cutNanos(msg_3.getCreationTime())));
+        assert(second_result.get(1).max_creation_time.equals(cutNanos(msg_3.getCreationTime())));
+        assert(second_result.get(0).user.equals(user_1));
+        assert(second_result.get(0).msg_num == 1);
+        assert(second_result.get(0).min_creation_time.equals(cutNanos(msg_4.getCreationTime())));
+        assert(second_result.get(0).max_creation_time.equals(cutNanos(msg_4.getCreationTime())));
+
+        assert(third_result.size() == 2);
+        assert(third_result.get(0).user.equals(user_1));
+        assert(third_result.get(0).msg_num == 3);
+        assert(third_result.get(0).min_creation_time.equals(cutNanos(msg_1.getCreationTime())));
+        assert(third_result.get(0).max_creation_time.equals(cutNanos(msg_4.getCreationTime())));
+        assert(third_result.get(1).user.equals(user_2));
+        assert(third_result.get(1).msg_num == 1);
+        assert(third_result.get(1).min_creation_time.equals(cutNanos(msg_3.getCreationTime())));
+        assert(third_result.get(1).max_creation_time.equals(cutNanos(msg_3.getCreationTime())));
+
+        for (Message message : mm.getAll(Message.class)) {
+            mm.delete(message);
+        }
+        dm.delete(discussion);
+        sm.delete(section);
+        um.delete(user_1);
+        um.delete(user_2);
+    }
+
+    LocalDateTime cutNanos(LocalDateTime tp)
+    {
+        int r = tp.getNano() % 1000;
+        return tp.minusNanos(r).plusNanos(r >= 500 ? 1000 : 0);
     }
 }
