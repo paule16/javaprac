@@ -1,6 +1,7 @@
-package com.javaprac.db_objects;
+package com.javaprac.model;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.annotations.NaturalId;
@@ -8,36 +9,39 @@ import org.hibernate.annotations.NaturalId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderColumn;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "Users")
 public class User {
     @Id
-    @GeneratedValue
+    @GeneratedValue(generator = "User_seq", strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(name = "User_seq", allocationSize = 1)
     private Integer id;
 
-    @NaturalId
-    private String nickname;
+    private String nickname = "";
 
-    @NaturalId
-    private String login;
+    private String login = "";
 
-    private String password;
+    private String password = "";
 
     private LocalDate date_of_registration;
 
-    private List<String> roles;
+    private List<String> roles = new ArrayList<>();
 
-    private Boolean banned_global;
+    private Boolean banned_global = false;
 
     @OneToMany(mappedBy = "creator", fetch = FetchType.LAZY)
-    private List<Discussion> created_discussions;
+    private List<Discussion> created_discussions = new ArrayList<>();
 
     @OneToMany(mappedBy = "creator", fetch = FetchType.LAZY)
     @OrderColumn(name = "creation_time", insertable = true, updatable = false)
-    private List<Message> created_messages;
+    private List<Message> created_messages = new ArrayList<>();
 
     public User(String nickname, String login, String password, List<String> roles)
     {
@@ -46,12 +50,16 @@ public class User {
         this.password = password;
         this.roles = roles;
         this.date_of_registration = LocalDate.now();
-        this.banned_global = false;
+    }
+
+    public User()
+    {
+        this.date_of_registration = LocalDate.now();
     }
 
     public boolean checkPassword(String password)
     {
-        return password == this.password;
+        return this.password.equals(password);
     }
 
     public int getId()

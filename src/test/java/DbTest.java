@@ -3,20 +3,21 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import org.testng.Assert;
 import org.testng.annotations.AfterGroups;
 import org.testng.annotations.BeforeGroups;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import com.javaprac.db_interface.DiscussionsManager;
-import com.javaprac.db_interface.MessagesManager;
-import com.javaprac.db_interface.SectionsManager;
-import com.javaprac.db_interface.UsersManager;
-import com.javaprac.db_objects.Discussion;
-import com.javaprac.db_objects.Message;
-import com.javaprac.db_objects.Permission;
-import com.javaprac.db_objects.Section;
-import com.javaprac.db_objects.User;
+import com.javaprac.managers.DiscussionsManager;
+import com.javaprac.managers.MessagesManager;
+import com.javaprac.managers.SectionsManager;
+import com.javaprac.managers.UsersManager;
+import com.javaprac.model.Discussion;
+import com.javaprac.model.Message;
+import com.javaprac.model.Permission;
+import com.javaprac.model.Section;
+import com.javaprac.model.User;
 
 public class DbTest {
     @DataProvider(name = "users")
@@ -70,29 +71,31 @@ public class DbTest {
         UsersManager manager = new UsersManager();
         User user = new User(nick, login, password, roles);
 
-        manager.add(user); manager.flush();
+        manager.add(user);
+
         LocalDate date = user.getRegistrationDate();
-        assert(date == LocalDate.now());
+        Assert.assertEquals(date, LocalDate.now());
         
         int id = user.getId();
 
         User check;
-
+        
         check = manager.get(User.class, id);
-        assert(check != null && check == user);
+        assert(check != null);
 
         check = manager.getByNickname(nick);
-        assert(check != null && check == user);
-
+        assert(check != null);
+        
         check = manager.getByLogin(login);
-        assert(check != null && check == user);
-
+        assert(check != null);
+        
         assert(check.checkPassword(password));
         assert(!check.checkPassword("__another password__"));
-        assert(check.getRoles() == roles);
+        Assert.assertEquals(check.getRoles(), roles);
 
-        manager.delete(user);
-        check = manager.get(User.class, id);
+        manager.delete(check);
+
+        check = manager.getByNickname(nick);
         assert(check == null);
     }
 
@@ -107,7 +110,6 @@ public class DbTest {
         User user = new User(nick, login, password, List.of());
 
         manager.add(user);
-        manager.flush();
 
         user = manager.auth("Mr. NoName", "hello");
         assert(user == null);
@@ -137,13 +139,12 @@ public class DbTest {
         User user = new User(nick, login, password, List.of());
         
         manager.add(user);
-        manager.flush();
-        
-        user = manager.auth(login, password);
-        assert(user != null);
         
         user = manager.auth(new_login, new_password);
         assert(user == null);
+        
+        user = manager.auth(login, password);
+        assert(user != null);
 
         user.setLogin(new_login);
         user.setPassword(new_password);
@@ -472,9 +473,77 @@ public class DbTest {
         }
     }
 
+    @Test (groups = {"predefUsers", "predefSections", "predefDiscussions", "predefMessages"})
+    public void testBan()
+    {
+        // TODO 
+    }
+
+
+    @BeforeGroups(groups = {"predefUsers"})
+    public void createUsers()
+    {
+        UsersManager manager = new UsersManager();
+        for (Object[] params : getUsers()) {
+            User user = new User((String)       params[0],
+                                 (String)       params[1],
+                                 (String)       params[2],
+                                 (List<String>) params[3]);
+            manager.add(user);
+        }
+    }
+
+    @BeforeGroups(groups = {"predefSections"})
+    public void createSections()
+    {
+        SectionsManager manager = new SectionsManager();
+        for (Object[] params : getSections()) {
+
+            Section section = new Section((String)                  params[0],
+                                          (String)                  params[1],
+                                          (Map<String, Permission>) params[2]);
+            manager.add(section);
+        }
+    }
+
+    @BeforeGroups(groups = {"predefDiscussions"})
+    public void createDiscussions()
+    {
+        DiscussionsManager manager = new DiscussionsManager();
+        SectionsManager s_manager = new SectionsManager();
+        for (Object[] params : getDiscussions()) {
+            Section section = s_manager.get(Section.class, (Integer) params[3]);
+
+            Discussion discussion = new Discussion((String)                     params[0],
+                                                   (String)                     params[1],
+                                                   (Map<String, Permission>)    params[2],
+                                                   section);
+            manager.add(discussion);
+        }
+    }
+
     @BeforeGroups(groups = {"predefMessages"})
     public void createMessages()
     {
+        MessagesManager manager = new MessagesManager();
+        DiscussionsManager d_manager = new DiscussionsManager();
+        for (Object[] params : getMessages()) {
+            Integer quote_id = (Integer) params[0];
+            Message quoted = null;
+            Discussion discussion = d_manager.get(Discussion.class, (Integer) params[5]);
+
+            if (quote_id != null) {
+                manager.get(Message.class, quote_id);
+            }
+
+            Message message = new Message((String)          params[3],
+                                          quoted,
+                                          (Integer)         params[1],
+                                          (Integer)         params[2],
+                                          (List<String>)    params[4],
+                                          discussion);
+            manager.add(message);
+        }
         MessagesManager manager = new MessagesManager();
         DiscussionsManager d_manager = new DiscussionsManager();
         for (Object[] params : getMessages()) {
@@ -503,8 +572,38 @@ public class DbTest {
         for (Message message : manager.getAll(Message.class)) {
             manager.delete(message);
         }
+        MessagesManager manager = new MessagesManager();
+        for (Message message : manager.getAll(Message.class)) {
+            manager.delete(message);
+        }
     }
 
+    @AfterGroups(groups = {"predefDiscussions"})
+    public void deleteDiscussions()
+    {
+        DiscussionsManager manager = new DiscussionsManager();
+        for (Discussion discussion : manager.getAll(Discussion.class)) {
+            manager.delete(discussion);
+        }
+    }
+
+    @AfterGroups(groups = {"predefSections"})
+    public void deleteSections()
+    {
+        SectionsManager manager = new SectionsManager();
+        for (Section section : manager.getAll(Section.class)) {
+            manager.delete(section);
+        }
+    }
+
+    @AfterGroups(groups = {"predefUsers"})
+    public void deleteUsers()
+    {
+        UsersManager manager = new UsersManager();
+        for (User user : manager.getAll(User.class)) {
+            manager.delete(user);
+        }
+    }
     @AfterGroups(groups = {"predefDiscussions"})
     public void deleteDiscussions()
     {

@@ -1,4 +1,4 @@
-package com.javaprac.db_objects;
+package com.javaprac.model;
 
 import jakarta.persistence.Embeddable;
 

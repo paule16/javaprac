@@ -1,4 +1,4 @@
-package com.javaprac.db_objects;
+package com.javaprac.model;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -7,14 +7,19 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "Messages")
 public class Message {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "Message_seq")
+    @SequenceGenerator(allocationSize = 1, name = "Message_seq")
     private Integer id;
 
     @ManyToOne(optional = false)

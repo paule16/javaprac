@@ -31,7 +31,6 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.3</version>
-            <scope>runtime</scope>
         </dependency>
 
     </dependencies>
@@ -124,6 +123,39 @@
                                     <include>db_fill.sql</include>
                                 </includes>
                             </fileset>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>reset-db</id>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <driver>org.postgresql.Driver</driver>
+                            <url>jdbc:postgresql://localhost:5432/webforum</url>
+                            <username>paul</username>
+                            <password>postgres</password>
+                            <autocommit>false</autocommit>
+                            <fileset>
+                                <basedir>${project.basedir}/sql</basedir>
+                                <includes>
+                                    <include>db_reset.sql</include>
+                                </includes>
+                            </fileset>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test-db</id>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <driver>org.postgresql.Driver</driver>
+                            <url>jdbc:postgresql://localhost:5432/webforum</url>
+                            <username>paul</username>
+                            <password>postgres</password>
+                            <autocommit>false</autocommit>
+                            <sqlCommand>select u1_0.id,u1_0.banned_global,u1_0.date_of_registration,u1_0.login,u1_0.nickname,u1_0.password,u1_0.roles from User u1_0 where u1_0.id=1</sqlCommand>
                         </configuration>
                     </execution>
                 </executions>

@@ -1,4 +1,4 @@
-package com.javaprac.db_objects;
+package com.javaprac.model;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -7,17 +7,23 @@ import java.util.Map;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "Discussions")
 public class Discussion {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "Discussion_seq")
+    @SequenceGenerator(allocationSize = 1, name = "Discussion_seq")
     private Integer id;
 
     private String label;
@@ -34,6 +40,7 @@ public class Discussion {
     @JoinColumn(updatable = false)
     private Section section;
 
+    @ElementCollection
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Permission> permissions;
 
