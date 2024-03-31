@@ -1,11 +1,14 @@
 package com.javaprac.model;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import com.javaprac.Permission;
 
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -40,29 +43,53 @@ public class Discussion {
     @JoinColumn(updatable = false)
     private Section section;
 
-    @ElementCollection
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Permission> permissions;
 
     @OneToMany(mappedBy = "discussion")
-    List<Message> messages;
+    List<Message> messages = new ArrayList<>();
+
+
+    public boolean equals(Discussion oth)
+    {
+        if (this == oth) {
+            return true;
+        }
+
+        return oth.id.equals(id) &&
+               oth.label.equals(label) &&
+               oth.description.equals(description) &&
+               oth.creation_time.equals(creation_time) &&
+               oth.permissions.equals(permissions) &&
+               oth.creator.equals(creator);
+    }
+
+    public Discussion() {}
 
     public Discussion(String label,
                       String description,
                       Map<String, Permission> perm,
-                      Section section)
+                      Section section,
+                      User creator)
     {
         this.label = label;
         this.description = description;
         this.permissions = perm;
         this.section = section;
+        this.creator = creator;
         this.creation_time = LocalDateTime.now();
     }
 
-    public Discussion(String label, String description)
+    public Discussion(String label,
+                      String description,
+                      Section section,
+                      User creator)
     {
         this.label = label;
         this.description = description;
+        this.permissions = Map.of();
+        this.section = section;
+        this.creator = creator;
         this.creation_time = LocalDateTime.now();
     }
 
@@ -126,9 +153,12 @@ public class Discussion {
 
     public boolean canWrite(User user)
     {
-        if (user.getRoles().contains("admin") || user == creator)
-        {
+        if (user.getRoles().contains("admin") || user == creator) {
             return true;
+        }
+
+        if (user.isBanned()) {
+            return false;
         }
 
         if (permissions.isEmpty()) {
@@ -149,9 +179,12 @@ public class Discussion {
 
     public boolean canEdit(User user)
     {
-        if (user.getRoles().contains("admin") || user == creator)
-        {
+        if (user.getRoles().contains("admin") || user == creator) {
             return true;
+        }
+
+        if (user.isBanned()) {
+            return false;
         }
         
         if (permissions.isEmpty()) {

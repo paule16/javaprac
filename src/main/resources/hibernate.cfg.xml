@@ -13,6 +13,8 @@
 
         <property name="connection.pool_size">10</property>
 
+        <!-- <property name="hibernate.type.json_format_mapper">jackson</property> -->
+
         <mapping class="com.javaprac.model.User" />
         <mapping class="com.javaprac.model.Discussion" />
         <mapping class="com.javaprac.model.Message" />

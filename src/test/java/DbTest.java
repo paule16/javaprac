@@ -3,19 +3,16 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import org.testng.Assert;
-import org.testng.annotations.AfterGroups;
-import org.testng.annotations.BeforeGroups;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import com.javaprac.Permission;
 import com.javaprac.managers.DiscussionsManager;
 import com.javaprac.managers.MessagesManager;
 import com.javaprac.managers.SectionsManager;
 import com.javaprac.managers.UsersManager;
 import com.javaprac.model.Discussion;
 import com.javaprac.model.Message;
-import com.javaprac.model.Permission;
 import com.javaprac.model.Section;
 import com.javaprac.model.User;
 
@@ -24,7 +21,7 @@ public class DbTest {
     public Object[][] getUsers()
     {
         return new Object[][] {
-            { "User1", "user1@example.com", "", List.of() },
+            { "User1", "user1@example.com",         "", List.of()        },
             { "User 2", "user2@example.ru", "12345678", List.of("admin") },
         };
     }
@@ -33,13 +30,14 @@ public class DbTest {
     public Object[][] getSections()
     {
         return new Object[][] {
-            { "Section 1", "section one description...", Map.of() },
-            { "Section 2", "", Map.of("public", new Permission(Permission.Levels.WRITE))},
+            { "Section 1", "section one description...", Map.of()                           },
+            { "Section 2",                           "", Map.of("public", Permission.WRITE) },
+
             { "Section 3", "aaaaaaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbbbb" +
                            "cccccccccccccccccccc dddddddddddddddddddddddddddddddddddddddd eeeeeeeeeeeeee" +
                            "ffffffffffffffffffffffffff    gggggggggggggggggggggggggghhhhhhhhhhhhhhhhhhh",
-              Map.of("public", new Permission(Permission.Levels.READ),
-                     "role", new Permission(Permission.Levels.EDIT))},
+              Map.of("public", Permission.READ,
+                       "role", Permission.EDIT)                                                             },
         };
     }
 
@@ -47,7 +45,12 @@ public class DbTest {
     public Object[][] getDiscussions()
     {
         return new Object[][] {
-            // TODO
+            { "Discussion 1",                        "", Map.of()                        },
+            { "Discussion 2",        "some description", Map.of("role", Permission.EDIT) },
+
+            { "Обсуждение 3", "!@@@@000писани3333###!!", Map.of( "admin", Permission.READ,
+                                                                "public", Permission.WRITE,
+                                                                  "role", Permission.EDIT) },
         };
     }
 
@@ -55,14 +58,9 @@ public class DbTest {
     public Object[][] getMessages()
     {
         return new Object[][] {
-            // TODO
+            { "Message 1", List.of() },
+            { "Message 222222222 222222222222222\n222222222222222", List.of("file.docx", "pikcha.png")}
         };
-    }
-
-    @Test(testName = "demoTest")
-    public void testNothing()
-    {
-        System.out.println("Hello, world!");
     }
 
     @Test(dataProvider = "users")
@@ -74,7 +72,7 @@ public class DbTest {
         manager.add(user);
 
         LocalDate date = user.getRegistrationDate();
-        Assert.assertEquals(date, LocalDate.now());
+        assert(date.equals(LocalDate.now()));
         
         int id = user.getId();
 
@@ -82,6 +80,9 @@ public class DbTest {
         
         check = manager.get(User.class, id);
         assert(check != null);
+        assert(check.getNick().equals(nick));
+        assert(check.getLogin().equals(login));
+        assert(check.getRoles().equals(roles));
 
         check = manager.getByNickname(nick);
         assert(check != null);
@@ -91,7 +92,6 @@ public class DbTest {
         
         assert(check.checkPassword(password));
         assert(!check.checkPassword("__another password__"));
-        Assert.assertEquals(check.getRoles(), roles);
 
         manager.delete(check);
 
@@ -103,7 +103,7 @@ public class DbTest {
     public void testAuthorize()
     {
         String nick = "Очередной пользователь...";
-        String login ="another.user@uuu.y";
+        String login ="another.user@jandex.ju";
         String password = "tut-tu-ruu";
 
         UsersManager manager = new UsersManager();
@@ -111,10 +111,10 @@ public class DbTest {
 
         manager.add(user);
 
-        user = manager.auth("Mr. NoName", "hello");
+        user = manager.auth("Mr. NoName", "NO");
         assert(user == null);
 
-        user = manager.auth(login, "hello");
+        user = manager.auth(login, "NO");
         assert(user == null);
 
         user = manager.auth("Mr. NoName", password);
@@ -130,9 +130,9 @@ public class DbTest {
     public void testUserChangeLoginPassword()
     {
         String nick = "changing user";
-        String login = "me@changeyourself.bu";
+        String login = "me@joojle.com";
         String password = "qwertty";
-        String new_login = "changed_me@changeyourself.bu";
+        String new_login = "changed_me@joojle.com";
         String new_password = "qwerTTY";
 
         UsersManager manager = new UsersManager();
@@ -149,6 +149,9 @@ public class DbTest {
         user.setLogin(new_login);
         user.setPassword(new_password);
 
+        manager.commit(user);
+        user = manager.get(User.class, user.getId());
+
         user = manager.auth(login, password);
         assert(user == null);
 
@@ -158,21 +161,43 @@ public class DbTest {
         manager.delete(user);
     }
 
-    // TODO: change nickname
+    @Test
+    public void testUserChangeNickname()
+    {
+        String old_nick = "old nick";
+        String new_nick = "new nick";
+
+        UsersManager manager = new UsersManager();
+        User user = new User(old_nick, "user@example.com", "", List.of());
+
+        manager.add(user);
+
+        User check = manager.get(User.class, user.getId());
+        assert(check.getNick() == old_nick);
+
+        user.setNick(new_nick);
+
+        check = manager.get(User.class, user.getId());
+        assert(check.getNick() == new_nick);
+
+        manager.delete(user);
+    }
 
     @Test(dataProvider = "sections")
-    public void testCreateCheckPermDeleteSection(String name, String description, Map<String, Permission> perm)
+    public void testCreateDeleteSection(String name, String description, Map<String, Permission> perm)
     {
         SectionsManager manager = new SectionsManager();
         Section section = new Section(name, description, perm);
 
         manager.add(section);
-        manager.flush();
 
         int id = section.getId();
 
         Section check = manager.get(Section.class, id);
-        assert(check == section);
+        assert(check != null);
+        assert(section.getDescription().equals(description));
+        assert(section.getName().equals(name));
+        assert(check.equals(section));
 
         manager.delete(check);
 
@@ -189,7 +214,6 @@ public class DbTest {
                                       "",
                                       Map.of());
         manager.add(section);
-        manager.flush();
         section = manager.get(Section.class, section.getId());
 
         User admin = new User("first", "first@example.com", "", List.of("admin"));
@@ -201,11 +225,11 @@ public class DbTest {
         assert(section.canEdit(admin));
 
         assert(section.canRead(stranger));
-        assert(section.canWrite(stranger));
+        assert(!section.canWrite(stranger));
         assert(!section.canEdit(stranger));
 
         assert(section.canRead(user));
-        assert(section.canWrite(user));
+        assert(!section.canWrite(user));
         assert(!section.canEdit(user));
 
         manager.delete(section);
@@ -217,14 +241,13 @@ public class DbTest {
         SectionsManager manager = new SectionsManager();
         Section section = new Section ("section",
                                        "",
-                                       Map.of("read_role", new Permission(Permission.Levels.READ),
-                                               "write_role", new Permission(Permission.Levels.WRITE),
-                                               "edit_role", new Permission(Permission.Levels.EDIT),
-                                               "admin", new Permission(Permission.Levels.READ) // should be ignored
+                                       Map.of("read_role", Permission.READ,
+                                               "write_role", Permission.WRITE,
+                                               "edit_role", Permission.EDIT,
+                                               "admin", Permission.READ // should be ignored
                                         ));
         
         manager.add(section);
-        manager.flush();
 
         section = manager.get(Section.class, section.getId());
 
@@ -232,7 +255,7 @@ public class DbTest {
         User stranger_1  = new User("second", "second@example.com", "", List.of());
         User stranger_2 = new User("second_second", "second_second@example.com", "", List.of("other_role"));
         User reading_user = new User("third", "third@expample.com", "", List.of("some_role", "read_role"));
-        User writing_user = new User("fourth", "fourth@example.com", "", List.of("writing_role", "some_role"));
+        User writing_user = new User("fourth", "fourth@example.com", "", List.of("write_role", "some_role"));
         User editing_user = new User("fifth", "fifth@example.com", "", List.of("edit_role"));
 
         assert(section.canRead(admin));
@@ -274,21 +297,28 @@ public class DbTest {
 
         s_manager.add(parent_section);
         u_manager.add(creator);
-        s_manager.flush();
-        u_manager.flush();
+
+        assert(parent_section.getDiscussions().isEmpty());
+        assert(creator.getCreateDiscussions().isEmpty());
 
         LocalDateTime low_lim = LocalDateTime.now();
-        Discussion discussion = new Discussion(theme, description, perm, parent_section);
+        Discussion discussion = new Discussion(theme, description, perm, parent_section, creator);
         d_manager.add(discussion);
-        d_manager.flush();
         LocalDateTime hi_lim = LocalDateTime.now();
 
         Discussion check = d_manager.get(Discussion.class, discussion.getId());
-        assert(check != null && check == discussion);
+        assert(check != null);
+        assert(check.getTheme().equals(theme));
+        assert(check.getDescription().equals(description));
         assert(check.getCreationTime().compareTo(low_lim) >= 0 && check.getCreationTime().compareTo(hi_lim) <= 0);
         
         assert(check.getCreator() == creator);
         assert(check.getSection() == parent_section);
+
+        s_manager.refresh(parent_section);
+        u_manager.refresh(creator);
+        assert(!parent_section.getDiscussions().isEmpty());
+        assert(!creator.getCreateDiscussions().isEmpty());
 
         int id = check.getId();
         d_manager.delete(check);
@@ -311,28 +341,27 @@ public class DbTest {
 
         s_manager.add(parent_section);
         u_manager.add(creator);
-        s_manager.flush();
-        u_manager.flush();
 
-        Discussion default_discussion = new Discussion("label", "", Map.of(), parent_section);
+        Discussion default_discussion = new Discussion("label", "", Map.of(), parent_section, creator);
         Discussion role_discussion = new Discussion("label",
                                                     "",
-                                                    Map.of("read_role", Permission.read_only(),
-                                                            "write_role", Permission.read_write(),
-                                                            "edit_role", Permission.full(),
-                                                            "admin", Permission.read_only(), // should be ignored
-                                                            "public", Permission.read_only()
+                                                    Map.of("read_role", Permission.READ,
+                                                            "write_role", Permission.WRITE,
+                                                            "edit_role", Permission.EDIT,
+                                                            "admin", Permission.READ, // should be ignored
+                                                            "public", Permission.READ
                                                      ),
-                                                     parent_section);
+                                                     parent_section,
+                                                     creator);
         Discussion priv_discussion = new Discussion("label",
                                                        "",
-                                                       Map.of("role", Permission.read_write()),
-                                                       parent_section);
+                                                       Map.of("role", Permission.WRITE),
+                                                       parent_section,
+                                                       creator);
 
         d_manager.add(default_discussion);
         d_manager.add(role_discussion);
         d_manager.add(priv_discussion);
-        d_manager.flush();
 
         default_discussion = d_manager.get(Discussion.class, default_discussion.getId());
 
@@ -340,7 +369,7 @@ public class DbTest {
         User stranger  = new User("second", "second@example.com", "", List.of());
         User user = new User("third", "third@expample.com", "", List.of("user"));
         User reading_user = new User("third", "third@expample.com", "", List.of("some_role", "read_role"));
-        User writing_user = new User("fourth", "fourth@example.com", "", List.of("writing_role", "some_role"));
+        User writing_user = new User("fourth", "fourth@example.com", "", List.of("write_role", "some_role"));
         User editing_user = new User("fifth", "fifth@example.com", "", List.of("edit_role"));
 
         // Check default permissions:
@@ -354,16 +383,12 @@ public class DbTest {
         assert(default_discussion.canEdit(admin));
 
         assert(default_discussion.canRead(stranger));
-        assert(default_discussion.canWrite(stranger));
-        assert(default_discussion.canEdit(stranger));
-
-        assert(default_discussion.canRead(stranger));
-        assert(default_discussion.canWrite(stranger));
-        assert(default_discussion.canEdit(stranger));
+        assert(!default_discussion.canWrite(stranger));
+        assert(!default_discussion.canEdit(stranger));
 
         assert(default_discussion.canRead(user));
-        assert(default_discussion.canWrite(user));
-        assert(default_discussion.canEdit(user));
+        assert(!default_discussion.canWrite(user));
+        assert(!default_discussion.canEdit(user));
 
         // Check specific permissions:
 
@@ -415,219 +440,144 @@ public class DbTest {
     @Test(groups = {"predefUsers", "predefSections", "predefDiscussions"}, dataProvider = "messages")
     public void testCreateDeleteMessage(String text, List<String> attachments)
     {
-        // TODO: create message
-        // TODO: check dateTime
-        // TODO: check link with discussion
-
-        // TODO: check creator, descussion and attachments
-
-        // TODO: delete message
-    }
-
-    @Test (groups = {"predefUsers", "predefSections", "predefDiscussions", "predefMessages"})
-    public void testBan()
-    {
-        // TODO 
-    }
-
-
-    @BeforeGroups(groups = {"predefUsers"})
-    public void createUsers()
-    {
-        UsersManager manager = new UsersManager();
-        for (Object[] params : getUsers()) {
-            User user = new User((String)       params[0],
-                                 (String)       params[1],
-                                 (String)       params[2],
-                                 (List<String>) params[3]);
-            manager.add(user);
-        }
-    }
-
-    @BeforeGroups(groups = {"predefSections"})
-    public void createSections()
-    {
-        SectionsManager manager = new SectionsManager();
-        for (Object[] params : getSections()) {
-
-            Section section = new Section((String)                  params[0],
-                                          (String)                  params[1],
-                                          (Map<String, Permission>) params[2]);
-            manager.add(section);
-        }
-    }
-
-    @BeforeGroups(groups = {"predefDiscussions"})
-    public void createDiscussions()
-    {
-        DiscussionsManager manager = new DiscussionsManager();
         SectionsManager s_manager = new SectionsManager();
-        for (Object[] params : getDiscussions()) {
-            Section section = s_manager.get(Section.class, (Integer) params[3]);
+        UsersManager u_manager = new UsersManager();
+        DiscussionsManager d_manager = new DiscussionsManager();
+        MessagesManager m_manager = new MessagesManager();
 
-            Discussion discussion = new Discussion((String)                     params[0],
-                                                   (String)                     params[1],
-                                                   (Map<String, Permission>)    params[2],
-                                                   section);
-            manager.add(discussion);
-        }
+        Section parent_section = new Section("section", "description");
+        User creator = new User("nick", "login@example.com", "pass", List.of());
+        Discussion parent_discussion = new Discussion("dis", "", Map.of(), parent_section, creator);
+
+        s_manager.add(parent_section);
+        u_manager.add(creator);
+        d_manager.add(parent_discussion);
+
+        assert(creator.getCreatedMessages().isEmpty());
+
+        LocalDateTime start = LocalDateTime.now();
+        Message message = new Message(text, attachments, parent_discussion, creator);
+        m_manager.add(message);
+        LocalDateTime end = LocalDateTime.now();
+
+        message = m_manager.get(Message.class, message.getId());
+        assert(message != null);
+
+        assert(message.getCreationTime().compareTo(start) >= 0);
+        assert(message.getCreationTime().compareTo(end) <= 0);
+
+        assert(message.getAttachments().equals(attachments));
+        assert(message.getCreator().equals(creator));
+        assert(message.getText().equals(text));
+
+        d_manager.refresh(parent_discussion);
+        u_manager.refresh(creator);
+
+        assert(!creator.getCreatedMessages().isEmpty());
+        assert(!parent_discussion.getMessages().isEmpty());
+
+        m_manager.delete(message);
+        message = m_manager.get(Message.class, message.getId());
+        assert(message == null);
     }
 
-    @Test (groups = {"predefUsers", "predefSections", "predefDiscussions", "predefMessages"})
-    public void testBan()
+    @Test
+    public void testGlobalBan()
     {
-        // TODO 
-    }
-
-
-    @BeforeGroups(groups = {"predefUsers"})
-    public void createUsers()
-    {
-        UsersManager manager = new UsersManager();
-        for (Object[] params : getUsers()) {
-            User user = new User((String)       params[0],
-                                 (String)       params[1],
-                                 (String)       params[2],
-                                 (List<String>) params[3]);
-            manager.add(user);
-        }
-    }
-
-    @BeforeGroups(groups = {"predefSections"})
-    public void createSections()
-    {
-        SectionsManager manager = new SectionsManager();
-        for (Object[] params : getSections()) {
-
-            Section section = new Section((String)                  params[0],
-                                          (String)                  params[1],
-                                          (Map<String, Permission>) params[2]);
-            manager.add(section);
-        }
-    }
-
-    @BeforeGroups(groups = {"predefDiscussions"})
-    public void createDiscussions()
-    {
-        DiscussionsManager manager = new DiscussionsManager();
+        UsersManager u_manager = new UsersManager();
         SectionsManager s_manager = new SectionsManager();
-        for (Object[] params : getDiscussions()) {
-            Section section = s_manager.get(Section.class, (Integer) params[3]);
-
-            Discussion discussion = new Discussion((String)                     params[0],
-                                                   (String)                     params[1],
-                                                   (Map<String, Permission>)    params[2],
-                                                   section);
-            manager.add(discussion);
-        }
-    }
-
-    @BeforeGroups(groups = {"predefMessages"})
-    public void createMessages()
-    {
-        MessagesManager manager = new MessagesManager();
         DiscussionsManager d_manager = new DiscussionsManager();
-        for (Object[] params : getMessages()) {
-            Integer quote_id = (Integer) params[0];
-            Message quoted = null;
-            Discussion discussion = d_manager.get(Discussion.class, (Integer) params[5]);
 
-            if (quote_id != null) {
-                manager.get(Message.class, quote_id);
-            }
+        User user = new User("user", "user@example.com", "", List.of("role"));
+        User creator = new User("creator", "creator@jse.js.jsu.ju", "", List.of());
+        User admin = new User("admin", "admin@jspras.ju", "", List.of("admin"));
+        Section section = new Section("section", "", Map.of("role", Permission.EDIT));
+        Discussion discussion = new Discussion("discussion", "", Map.of("role", Permission.EDIT), section, creator);
 
-            Message message = new Message((String)          params[3],
-                                          quoted,
-                                          (Integer)         params[1],
-                                          (Integer)         params[2],
-                                          (List<String>)    params[4],
-                                          discussion);
-            manager.add(message);
-        }
-        MessagesManager manager = new MessagesManager();
-        DiscussionsManager d_manager = new DiscussionsManager();
-        for (Object[] params : getMessages()) {
-            Integer quote_id = (Integer) params[0];
-            Message quoted = null;
-            Discussion discussion = d_manager.get(Discussion.class, (Integer) params[5]);
+        u_manager.add(user);
+        u_manager.add(admin);
+        u_manager.add(creator);
+        s_manager.add(section);
+        d_manager.add(discussion);
 
-            if (quote_id != null) {
-                manager.get(Message.class, quote_id);
-            }
+        assert(!section.canRead(creator) && !section.canWrite(creator) && !section.canEdit(creator));
+        assert(section.canRead(admin) && section.canWrite(admin) && section.canEdit(admin));
+        assert(section.canRead(user) && section.canWrite(user) && section.canEdit(user));
 
-            Message message = new Message((String)          params[3],
-                                          quoted,
-                                          (Integer)         params[1],
-                                          (Integer)         params[2],
-                                          (List<String>)    params[4],
-                                          discussion);
-            manager.add(message);
-        }
+        assert(discussion.canRead(creator) && discussion.canWrite(creator) && discussion.canEdit(creator));
+        assert(discussion.canRead(admin) && discussion.canWrite(admin) && discussion.canEdit(admin));
+        assert(discussion.canRead(user) && discussion.canWrite(user) && discussion.canEdit(user));
+
+        user.ban();
+        u_manager.commit(user);
+        u_manager.refresh(user);
+
+        admin.ban();
+        u_manager.commit(admin);
+        u_manager.refresh(admin);
+
+        creator.ban();
+        u_manager.commit(creator);
+        u_manager.refresh(creator);
+
+        assert(!section.canRead(creator) && !section.canWrite(creator) && !section.canEdit(creator));
+        assert(section.canRead(admin) && section.canWrite(admin) && section.canEdit(admin));
+        assert(section.canRead(user) && !section.canWrite(user) && !section.canEdit(user));
+
+        assert(discussion.canRead(creator) && discussion.canWrite(creator) && discussion.canEdit(creator));
+        assert(discussion.canRead(admin) && discussion.canWrite(admin) && discussion.canEdit(admin));
+        assert(discussion.canRead(user) && !discussion.canWrite(user) && !discussion.canEdit(user));
+
+        d_manager.delete(discussion);
+        s_manager.delete(section);
+        u_manager.delete(user);
+        u_manager.delete(admin);
+        u_manager.delete(creator);
     }
 
-    @AfterGroups(groups = {"predefMessages"})
-    public void deleteMessages()
+    @Test
+    public void testQuotedMessage()
     {
-        MessagesManager manager = new MessagesManager();
-        for (Message message : manager.getAll(Message.class)) {
-            manager.delete(message);
-        }
-        MessagesManager manager = new MessagesManager();
-        for (Message message : manager.getAll(Message.class)) {
-            manager.delete(message);
-        }
-    }
+        User creator = new User("creator", "creator@bbb.com", "", List.of());
+        User user_1 = new User("user 1", "user1@exmpale.com", "", List.of());
+        User user_2 = new User("user 2", "user2@example.com", "", List.of());
 
-    @AfterGroups(groups = {"predefDiscussions"})
-    public void deleteDiscussions()
-    {
-        DiscussionsManager manager = new DiscussionsManager();
-        for (Discussion discussion : manager.getAll(Discussion.class)) {
-            manager.delete(discussion);
-        }
-    }
+        Section section = new Section("section", "");
+        Discussion discussion = new Discussion("discussion", "", section, creator);
 
-    @AfterGroups(groups = {"predefSections"})
-    public void deleteSections()
-    {
-        SectionsManager manager = new SectionsManager();
-        for (Section section : manager.getAll(Section.class)) {
-            manager.delete(section);
-        }
-    }
+        SectionsManager sm = new SectionsManager();
+        DiscussionsManager dm = new DiscussionsManager();
+        UsersManager um = new UsersManager();
+        MessagesManager mm = new MessagesManager();
 
-    @AfterGroups(groups = {"predefUsers"})
-    public void deleteUsers()
-    {
-        UsersManager manager = new UsersManager();
-        for (User user : manager.getAll(User.class)) {
-            manager.delete(user);
-        }
-    }
-    @AfterGroups(groups = {"predefDiscussions"})
-    public void deleteDiscussions()
-    {
-        DiscussionsManager manager = new DiscussionsManager();
-        for (Discussion discussion : manager.getAll(Discussion.class)) {
-            manager.delete(discussion);
-        }
-    }
+        um.add(creator);
+        sm.add(section);
+        dm.add(discussion);
+        
+        um.add(user_1);
+        um.add(user_2);
 
-    @AfterGroups(groups = {"predefSections"})
-    public void deleteSections()
-    {
-        SectionsManager manager = new SectionsManager();
-        for (Section section : manager.getAll(Section.class)) {
-            manager.delete(section);
-        }
-    }
+        Message quotee = new Message("Hello, world!", List.of(), discussion, user_1);
+        mm.add(quotee);
 
-    @AfterGroups(groups = {"predefUsers"})
-    public void deleteUsers()
-    {
-        UsersManager manager = new UsersManager();
-        for (User user : manager.getAll(User.class)) {
-            manager.delete(user);
-        }
+        Message quoter = new Message("Hi!", quotee, 0, 5, List.of(), discussion, user_2);
+        mm.add(quoter);
+
+        Message check = mm.get(Message.class, quoter.getId());
+
+        assert(check.getQuoted() != null);
+        assert(check.getQuoted().equals(quotee));
+        assert(check.getQuote().equals("Hello"));
+
+        assert(check.getQuoted().getCreator().equals(user_1));
+        assert(check.getQuoted().getDiscussion().equals(check.getDiscussion()));
+
+        mm.delete(quoter);
+        mm.delete(quotee);
+        dm.delete(discussion);
+        sm.delete(section);
+        um.delete(user_2);
+        um.delete(user_1);
+        um.delete(creator);
     }
 }

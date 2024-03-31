@@ -1,10 +1,12 @@
 package com.javaprac.model;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -30,9 +32,9 @@ public class Message {
 
     private List<String> attachments;
 
-    private Integer likes_num;
+    private Integer likes_num = 0;
 
-    private Integer dislikes_num;
+    private Integer dislikes_num = 0;
 
     private LocalDateTime creation_time;
 
@@ -40,27 +42,69 @@ public class Message {
     @JoinColumn(updatable = false)
     private Discussion discussion;
 
+    @Embedded
     private Quote quote;
+
+    public boolean equals(Message oth)
+    {
+        if (this == oth) {
+            return true;
+        }
+
+        return oth.id.equals(id) &&
+               oth.content.equals(content) &&
+               oth.attachments.equals(attachments) &&
+               oth.likes_num.equals(likes_num) &&
+               oth.dislikes_num.equals(dislikes_num) &&
+               oth.creation_time.equals(creation_time) &&
+               oth.quote.equals(quote) &&
+               oth.discussion.equals(discussion) &&
+               oth.creator.equals(creator);
+    }
+
+    public Message() {}
 
     public Message(String text,
                    Message quoted,
                    int quote_start,
                    int quote_end,
                    List<String> attachments,
-                   Discussion discussion)
+                   Discussion discussion,
+                   User creator)
     {
         this.content = text;
         this.quote = new Quote(quoted, quote_start, quote_end);
         this.attachments = attachments;
-        this.likes_num = 0;
-        this.dislikes_num = 0;
-        this.creation_time = LocalDateTime.now();
         this.discussion = discussion;
+        this.creator = creator;
+        this.creation_time = LocalDateTime.now();
+    }
+
+    public Message(String text,
+                   List<String> attachments,
+                   Discussion discussion,
+                   User creator)
+    {
+        this.content = text;
+        this.attachments = attachments;
+        this.discussion = discussion;
+        this.creator = creator;
+        this.creation_time = LocalDateTime.now();
+    }
+
+    public int getId()
+    {
+        return id;
     }
 
     public User getCreator()
     {
         return creator;
+    }
+
+    public Discussion getDiscussion()
+    {
+        return discussion;
     }
 
     public String getText()
@@ -114,7 +158,7 @@ public class Message {
 }
 
 @Embeddable
-class Quote {
+class Quote implements Serializable {
     @ManyToOne
     @JoinColumn(name = "quote_msg_id")
     private Message message;
@@ -124,6 +168,19 @@ class Quote {
 
     @Column(name = "quote_end")
     private Integer end;
+
+    public boolean equals(Quote oth)
+    {
+        if (this == oth) {
+            return true;
+        }
+
+        return oth.start.equals(start) &&
+               oth.end.equals(end) &&
+               oth.message.equals(message);
+    }
+
+    public Quote() {}
 
     public Quote(Message message, int start, int end)
     {

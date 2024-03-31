@@ -16,6 +16,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.17.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-core</artifactId>
             <version>6.4.4.Final</version>
@@ -37,6 +43,7 @@
 
     <build>
         <plugins>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>sql-maven-plugin</artifactId>
@@ -156,6 +163,29 @@
                             <password>postgres</password>
                             <autocommit>false</autocommit>
                             <sqlCommand>select u1_0.id,u1_0.banned_global,u1_0.date_of_registration,u1_0.login,u1_0.nickname,u1_0.password,u1_0.roles from User u1_0 where u1_0.id=1</sqlCommand>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.11</version>
+                <executions>
+                    <execution>
+                        <id>prepare</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>target/coverage/</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>

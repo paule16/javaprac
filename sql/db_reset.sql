@@ -1,5 +1,5 @@
 DELETE FROM BannedInSection;
-DELETE FROM Users;
-DELETE FROM Sections;
-DELETE FROM Discussions;
 DELETE FROM Messages;
+DELETE FROM Discussions;
+DELETE FROM Sections;
+DELETE FROM Users;

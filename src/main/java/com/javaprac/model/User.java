@@ -12,7 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OrderColumn;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
@@ -24,11 +24,11 @@ public class User {
     @SequenceGenerator(name = "User_seq", allocationSize = 1)
     private Integer id;
 
-    private String nickname = "";
+    private String nickname;
 
-    private String login = "";
+    private String login;
 
-    private String password = "";
+    private String password;
 
     private LocalDate date_of_registration;
 
@@ -37,11 +37,29 @@ public class User {
     private Boolean banned_global = false;
 
     @OneToMany(mappedBy = "creator", fetch = FetchType.LAZY)
+    @OrderBy("creation_time")
     private List<Discussion> created_discussions = new ArrayList<>();
 
     @OneToMany(mappedBy = "creator", fetch = FetchType.LAZY)
-    @OrderColumn(name = "creation_time", insertable = true, updatable = false)
+    @OrderBy("creation_time")
     private List<Message> created_messages = new ArrayList<>();
+
+    public boolean equals(User oth)
+    {
+        if (this == oth) {
+            return true;
+        }
+
+        return oth.id.equals(id) &&
+               oth.nickname.equals(nickname) &&
+               oth.login.equals(login) &&
+               oth.password.equals(password) &&
+               oth.date_of_registration.equals(date_of_registration) &&
+               oth.roles.equals(roles) &&
+               oth.banned_global.equals(banned_global);
+    }
+
+    public User() {}
 
     public User(String nickname, String login, String password, List<String> roles)
     {
@@ -49,11 +67,6 @@ public class User {
         this.login = login;
         this.password = password;
         this.roles = roles;
-        this.date_of_registration = LocalDate.now();
-    }
-
-    public User()
-    {
         this.date_of_registration = LocalDate.now();
     }
 
@@ -90,6 +103,12 @@ public class User {
     public List<Discussion> getCreateDiscussions()
     {
         return created_discussions;
+    }
+
+
+    public List<Message> getCreatedMessages()
+    {
+        return created_messages;
     }
 
     public boolean isBanned()

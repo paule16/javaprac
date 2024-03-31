@@ -1,7 +1,5 @@
 package com.javaprac.managers;
 
-import org.hibernate.Session;
-
 import com.javaprac.model.User;
 
 import jakarta.persistence.NoResultException;

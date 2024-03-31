@@ -25,16 +25,6 @@ public abstract class Manager<E, K> {
         return result;
     }
 
-    public boolean delete(Class<E> entityClass, K key)
-    {
-        em.getTransaction().begin();
-        E entity = em.find(entityClass, key);
-        if (entity == null) return false;
-        em.remove(entity);
-        em.getTransaction().commit();
-        return true;
-    }
-
     public void delete(E entity)
     {
         em.getTransaction().begin();
@@ -67,6 +57,10 @@ public abstract class Manager<E, K> {
         em.getTransaction().commit();
     }
 
+    public void refresh(E entity)
+    {
+        em.refresh(entity);
+    }
 }
 
 class EntityManagerCreator {

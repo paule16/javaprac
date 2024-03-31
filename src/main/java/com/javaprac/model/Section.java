@@ -7,10 +7,9 @@ import java.util.Map;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import jakarta.persistence.ElementCollection;
+import com.javaprac.Permission;
+
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -33,9 +32,7 @@ public class Section {
 
     private String description;
 
-    @ElementCollection
     @JdbcTypeCode(SqlTypes.JSON)
-    @Enumerated(value = EnumType.ORDINAL)
     private Map<String, Permission> permissions;
 
     @ManyToMany
@@ -49,7 +46,21 @@ public class Section {
     private List<User> banned_users = new ArrayList<>();
 
     @OneToMany(mappedBy = "section")
-    List<Discussion> discussions;
+    List<Discussion> discussions = new ArrayList<>();
+
+    public boolean equals(Section oth)
+    {
+        if (this == oth) {
+            return true;
+        }
+
+        return oth.id.equals(id) &&
+               oth.name.equals(name) &&
+               oth.description.equals(description) &&
+               oth.permissions.equals(permissions);
+    }
+
+    public Section() {}
 
     public Section(String name, String description, Map<String, Permission> perm)
     {
@@ -91,8 +102,7 @@ public class Section {
 
     public boolean canRead(User user)
     {
-        if (user.getRoles().contains("admin"))
-        {
+        if (user.getRoles().contains("admin")) {
             return true;
         }
 
@@ -115,7 +125,7 @@ public class Section {
             return true;
         }
 
-        if (banned_users.contains(user)) {
+        if (user.isBanned() || banned_users.contains(user)) {
             return false;
         }
 
@@ -142,7 +152,7 @@ public class Section {
             return true;
         }
 
-        if (banned_users.contains(user)) {
+        if (user.isBanned() || banned_users.contains(user)) {
             return false;
         }
 
