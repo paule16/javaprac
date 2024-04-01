@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Message.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">webforum</a> &gt; <a href="index.source.html" class="el_package">com.javaprac.model</a> &gt; <span class="el_source">Message.java</span></div><h1>Message.java</h1><pre class="source lang-java linenums">package com.javaprac.model;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = &quot;Messages&quot;)
+public class Message {
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = &quot;Message_seq&quot;)
+    @SequenceGenerator(allocationSize = 1, name = &quot;Message_seq&quot;)
+    private Integer id;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(updatable = false)
+    private User creator;
+
+    private String content;
+
+    private List&lt;String&gt; attachments;
+
+<span class="fc" id="L35">    private Integer likes_num = 0;</span>
+
+<span class="fc" id="L37">    private Integer dislikes_num = 0;</span>
+
+    private LocalDateTime creation_time;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(updatable = false)
+    private Discussion discussion;
+
+    @Embedded
+    private Quote quote;
+
+    public boolean equals(Message oth)
+    {
+        // if (this == oth) {
+        //     return true;
+        // }
+
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        return oth.id.equals(id) &amp;&amp;</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">               oth.content.equals(content) &amp;&amp;</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">               oth.attachments.equals(attachments) &amp;&amp;</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">               oth.likes_num.equals(likes_num) &amp;&amp;</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">               oth.dislikes_num.equals(dislikes_num) &amp;&amp;</span>
+<span class="pc bpc" id="L59" title="3 of 6 branches missed.">               oth.creation_time.equals(creation_time) &amp;&amp;</span>
+<span class="pc bnc" id="L60" title="All 2 branches missed.">               ((oth.quote == null &amp;&amp; quote == null) || oth.quote.equals(quote)) &amp;&amp;</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">               oth.discussion.equals(discussion) &amp;&amp;</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">               oth.creator.equals(creator);</span>
+    }
+
+<span class="fc" id="L65">    public Message() {}</span>
+
+    public Message(String text,
+                   Message quoted,
+                   int quote_start,
+                   int quote_end,
+                   List&lt;String&gt; attachments,
+                   Discussion discussion,
+                   User creator)
+<span class="fc" id="L74">    {</span>
+<span class="fc" id="L75">        this.content = text;</span>
+<span class="fc" id="L76">        this.quote = new Quote(quoted, quote_start, quote_end);</span>
+<span class="fc" id="L77">        this.attachments = attachments;</span>
+<span class="fc" id="L78">        this.discussion = discussion;</span>
+<span class="fc" id="L79">        this.creator = creator;</span>
+<span class="fc" id="L80">        this.creation_time = LocalDateTime.now();</span>
+<span class="fc" id="L81">    }</span>
+
+    public Message(String text,
+                   List&lt;String&gt; attachments,
+                   Discussion discussion,
+                   User creator)
+<span class="fc" id="L87">    {</span>
+<span class="fc" id="L88">        this.content = text;</span>
+<span class="fc" id="L89">        this.attachments = attachments;</span>
+<span class="fc" id="L90">        this.discussion = discussion;</span>
+<span class="fc" id="L91">        this.creator = creator;</span>
+<span class="fc" id="L92">        this.creation_time = LocalDateTime.now();</span>
+<span class="fc" id="L93">    }</span>
+
+    public int getId()
+    {
+<span class="fc" id="L97">        return id;</span>
+    }
+
+    public User getCreator()
+    {
+<span class="fc" id="L102">        return creator;</span>
+    }
+
+    public Discussion getDiscussion()
+    {
+<span class="fc" id="L107">        return discussion;</span>
+    }
+
+    public String getText()
+    {
+<span class="fc" id="L112">        return content;</span>
+    }
+
+    public String getText(int start, int end)
+    {
+<span class="fc" id="L117">        return content.substring(start, end);</span>
+    }
+
+    public Message getQuoted()
+    {
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (quote == null) {</span>
+<span class="fc" id="L123">            return null;</span>
+        } else {
+<span class="fc" id="L125">            return quote.getMessage();</span>
+        }
+    }
+
+    public String getQuote()
+    {
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        if (quote == null) {</span>
+<span class="fc" id="L132">            return null;</span>
+        } else {
+<span class="fc" id="L134">            return quote.getQuote();</span>
+        }
+    }
+
+    public List&lt;String&gt; getAttachments()
+    {
+<span class="fc" id="L140">        return attachments;</span>
+    }
+
+    public int getLikes()
+    {
+<span class="nc" id="L145">        return likes_num;</span>
+    }
+
+    public int getDislikes()
+    {
+<span class="nc" id="L150">        return dislikes_num;</span>
+    }
+
+    public LocalDateTime getCreationTime()
+    {
+<span class="fc" id="L155">        return creation_time;</span>
+    }
+
+}
+
+@Embeddable
+class Quote implements Serializable {
+    @ManyToOne
+    @JoinColumn(name = &quot;quote_msg_id&quot;)
+    private Message message;
+
+    @Column(name = &quot;quote_start&quot;)
+    private Integer start;
+
+    @Column(name = &quot;quote_end&quot;)
+    private Integer end;
+
+    public boolean equals(Quote oth)
+    {
+        // if (this == oth) {
+        //     return true;
+        // }
+
+<span class="nc bnc" id="L178" title="All 2 branches missed.">        return oth.start.equals(start) &amp;&amp;</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">               oth.end.equals(end) &amp;&amp;</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">               oth.message.equals(message);</span>
+    }
+
+<span class="fc" id="L183">    public Quote() {}</span>
+
+    public Quote(Message message, int start, int end)
+<span class="fc" id="L186">    {</span>
+<span class="fc" id="L187">        this.message = message;</span>
+<span class="fc" id="L188">        this.start = start;</span>
+<span class="fc" id="L189">        this.end = end;</span>
+<span class="fc" id="L190">    }</span>
+
+    public Message getMessage()
+    {
+<span class="fc" id="L194">        return message;</span>
+    }
+
+    public String getQuote()
+    {
+<span class="fc" id="L199">        return message.getText(start, end);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

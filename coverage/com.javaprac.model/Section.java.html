@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ru"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Section.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">webforum</a> &gt; <a href="index.source.html" class="el_package">com.javaprac.model</a> &gt; <span class="el_source">Section.java</span></div><h1>Section.java</h1><pre class="source lang-java linenums">package com.javaprac.model;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import com.javaprac.Permission;
+import com.javaprac.managers.SectionsManager;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = &quot;Sections&quot;)
+public class Section {
+    @Id
+    @GeneratedValue(generator = &quot;Section_seq&quot;, strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(name = &quot;Section_seq&quot;, allocationSize = 1)
+    private Integer id;
+
+    private String name;
+
+    private String description;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    private Map&lt;String, Permission&gt; permissions;
+
+<span class="fc" id="L40">    @ManyToMany</span>
+    @JoinTable(
+        name = &quot;BannedInSection&quot;,
+        joinColumns =
+            @JoinColumn(name = &quot;section_id&quot;, referencedColumnName = &quot;id&quot;),
+        inverseJoinColumns = 
+            @JoinColumn(name = &quot;user_id&quot;, referencedColumnName = &quot;id&quot;)
+    )
+    private List&lt;User&gt; banned_users = new ArrayList&lt;&gt;();
+
+<span class="fc" id="L50">    @OneToMany(mappedBy = &quot;section&quot;)</span>
+    List&lt;Discussion&gt; discussions = new ArrayList&lt;&gt;();
+
+    public boolean equals(Section oth)
+    {
+        // if (this == oth) {
+        //     return true;
+        // }
+
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        return oth.id.equals(id) &amp;&amp;</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">               oth.name.equals(name) &amp;&amp;</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">               oth.description.equals(description) &amp;&amp;</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">               oth.permissions.equals(permissions);</span>
+    }
+
+<span class="fc" id="L65">    public Section() {}</span>
+
+    public Section(String name, String description, Map&lt;String, Permission&gt; perm)
+<span class="fc" id="L68">    {</span>
+<span class="fc" id="L69">        this.name = name;</span>
+<span class="fc" id="L70">        this.description = description;</span>
+<span class="fc" id="L71">        this.permissions = perm;</span>
+<span class="fc" id="L72">    }</span>
+
+    public Section(String name, String description)
+<span class="fc" id="L75">    {</span>
+<span class="fc" id="L76">        this.name = name;</span>
+<span class="fc" id="L77">        this.description = description;</span>
+<span class="fc" id="L78">        this.permissions = Map.of();</span>
+<span class="fc" id="L79">    }</span>
+
+    public int getId()
+    {
+<span class="fc" id="L83">        return id;</span>
+    }
+
+    public String getName()
+    {
+<span class="fc" id="L88">        return name;</span>
+    }
+
+    public String getDescription()
+    {
+<span class="fc" id="L93">        return description;</span>
+    }
+
+    public boolean isBanned(User user)
+    {
+<span class="fc" id="L98">        return banned_users.contains(user);</span>
+    }
+
+    public List&lt;Discussion&gt; getDiscussions()
+    {
+<span class="fc" id="L103">        return discussions;</span>
+    }
+
+    public boolean canRead(User user)
+    {
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        if (user.getRoles().contains(&quot;admin&quot;)) {</span>
+<span class="fc" id="L109">            return true;</span>
+        }
+
+<span class="pc bpc" id="L112" title="1 of 4 branches missed.">        if (permissions.isEmpty() || permissions.containsKey(&quot;public&quot;)) {</span>
+<span class="fc" id="L113">            return true;</span>
+        }
+
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        for (String role : user.getRoles()) {</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">            if (permissions.containsKey(role)) {</span>
+<span class="fc" id="L118">                return true;</span>
+            }
+<span class="fc" id="L120">        }</span>
+<span class="fc" id="L121">        return false;</span>
+    }
+
+    public boolean canWrite(User user)
+    {
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (user.getRoles().contains(&quot;admin&quot;))</span>
+        {
+<span class="fc" id="L128">            return true;</span>
+        }
+
+<span class="fc bfc" id="L131" title="All 4 branches covered.">        if (user.isBanned() || banned_users.contains(user)) {</span>
+<span class="fc" id="L132">            return false;</span>
+        }
+
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        if (permissions.isEmpty()) {</span>
+<span class="fc" id="L136">            return false;</span>
+        }
+
+<span class="pc bpc" id="L139" title="3 of 4 branches missed.">        if (permissions.containsKey(&quot;public&quot;) &amp;&amp; permissions.get(&quot;public&quot;).allow_write()) {</span>
+<span class="nc" id="L140">            return true;</span>
+        }
+
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        for (String role : user.getRoles()) {</span>
+<span class="fc bfc" id="L144" title="All 4 branches covered.">            if (permissions.containsKey(role) &amp;&amp; permissions.get(role).allow_write()) {</span>
+<span class="fc" id="L145">                return true;</span>
+            }
+<span class="fc" id="L147">        }</span>
+<span class="fc" id="L148">        return false;</span>
+    }
+
+    public boolean canEdit(User user)
+    {
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        if (user.getRoles().contains(&quot;admin&quot;)) {</span>
+<span class="fc" id="L154">            return true;</span>
+        }
+
+<span class="fc bfc" id="L157" title="All 4 branches covered.">        if (user.isBanned() || banned_users.contains(user)) {</span>
+<span class="fc" id="L158">            return false;</span>
+        }
+
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        if (permissions.isEmpty()) {</span>
+<span class="fc" id="L162">            return false;</span>
+        }
+
+<span class="pc bpc" id="L165" title="3 of 4 branches missed.">        if (permissions.containsKey(&quot;public&quot;) &amp;&amp; permissions.get(&quot;public&quot;).allow_edit()) {</span>
+<span class="nc" id="L166">            return true;</span>
+        }
+
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        for (String role : user.getRoles()) {</span>
+<span class="fc bfc" id="L170" title="All 4 branches covered.">            if (permissions.containsKey(role) &amp;&amp; permissions.get(role).allow_edit()) {</span>
+<span class="fc" id="L171">                return true;</span>
+            }
+<span class="fc" id="L173">        }</span>
+<span class="fc" id="L174">        return false;</span>
+    }
+
+    public void ban(User user)
+    {
+<span class="fc" id="L179">        banned_users.add(user);</span>
+<span class="fc" id="L180">    }</span>
+
+    public static class ActiveUsersWrapper {
+        public User user;
+        public LocalDateTime min_creation_time;
+        public LocalDateTime max_creation_time;
+        public Long msg_num;
+
+        public ActiveUsersWrapper(User user, LocalDateTime min_time, LocalDateTime max_time, Long msg_num)
+<span class="fc" id="L189">        {</span>
+<span class="fc" id="L190">            this.user = user;</span>
+<span class="fc" id="L191">            this.min_creation_time = min_time;</span>
+<span class="fc" id="L192">            this.max_creation_time = max_time;</span>
+<span class="fc" id="L193">            this.msg_num = msg_num;</span>
+<span class="fc" id="L194">        }</span>
+    }
+
+    public List&lt;ActiveUsersWrapper&gt; getActiveUsers(LocalDateTime from, LocalDateTime to)
+    {
+<span class="fc" id="L199">        return (new SectionsManager()).getActiveUsers(getId(), from, to);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
