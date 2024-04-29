@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+    <head>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+        <title></title>
+
+        <script>
+            function addRole() {
+                let form = document.createElement('form');
+                form.classList.add('list-group-item');
+                form.classList.add('hstack');
+                form.classList.add('p-0');
+                form.method = "get";
+                form.action = "/add_role";
+
+                let session = document.createElement('input');
+                session.type = "hidden";
+                session.name = "session";
+                session.value = '[[${session_id}]]';
+
+                let user = document.createElement('input');
+                user.type = 'hidden';
+                user.name = 'user';
+                user.value = '[[${user.id}]]';
+
+                let inp = document.createElement('input');
+                inp.classList.add('px-3');
+                inp.classList.add('w-100');
+                inp.classList.add('form-control');
+                inp.classList.add('form-control-plaintext');
+                inp.name = "role";
+
+                let button = document.createElement('button');
+                button.type = "submit";
+                button.classList.add('btn');
+                button.classList.add('btn-outline-success');
+                button.classList.add('rounded-0');
+                button.classList.add('border-0');
+                button.classList.add('border-start');
+                button.textContent = "V"
+
+                form.append(session);
+                form.append(user);
+                form.append(inp);
+                form.append(button);
+
+                const bot = document.getElementById("after_roles");
+                bot.before(form);
+            }
+        </script>
+        <!-- <div class="list-group-item hstack p-0" th:each="role : ${user.roles}">
+            <span class="px-3 w-100 translate-middle-x start-50 position-relative" th:text="${role}">role 1</span>
+            <button type="button" class="btn btn-outline-danger rounded-0 border-0 border-start">X</button>
+        </div> -->
+
+    </head>
+
+    <style>
+        #add_role_link:hover {
+            opacity: 50%;
+        }
+    </style>
+
+    <body>
+        <div th:insert="~{general :: header(true)}"></div>
+
+        <div class="vstack mt-3">
+            <a class="btn btn-link text-danger ms-auto" th:if="${can_delete}"
+               th:href="|/delete_user?session=${session_id}&user=${user.id}|">- удалить пользователя</a>
+            <a class="btn btn-outline-danger mx-3 w-auto ms-auto" th:href="|/leave?session=${session_id}|"
+               th:if="${is_owner}">Выйти</a>
+        </div>
+
+        <div class="hstack gap-3 m-3 h-100">
+            <div class="text-center vstack gap-3 w-25">
+                <h2 class="opacity-75" th:text="${user.nickname}">Nickname</h2>
+                <div class="list-group rounded-0" id="roles">
+                    <label for="roles" class="list-group-item bg-dark text-white text-center">
+                        РОЛИ
+                    </label>
+                    <form class="list-group-item hstack p-0" th:each="role : ${user.roles}" method="get" action="/remove_role">
+                        <input type="hidden" name="session" th:value="${session_id}">
+                        <input type="hidden" name="user" th:value="${user.id}">
+                        <input type="hidden" name="role" th:value="${role}">
+                        <span class="px-3 w-100 translate-middle-x start-50 position-relative" th:text="${role}">role 1</span>
+                        <button type="submit" class="btn btn-outline-danger rounded-0 border-0 border-start">X</button>
+                    </form>
+                    <div class="list-group-item list-group-item-dark" id="after_roles">
+                        <button class="text-decoration-none text-dark btn border-0" id="add_role_link" onclick="addRole()" th:disabled="${!can_ch_roles}">+ добавить</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vstack gap-3 w-100">
+                <div class="border hstack p-3 gap-3" th:if="${is_owner}">
+                    <form class="w-50 vstack gap-3" th:object="${login_form}" action="/changeLogin" method="post">
+                        <input type="hidden" name="sessionId" th:value="${session_id}">
+                        <div class="input-group">
+                            <label class="input-group-text">новый логин:</label>
+                            <input type="email" class="form-control" placeholder="the old login..."
+                                   th:placeholder="${user.login}" th:field="*{newLogin}">
+                        </div>
+                        <div class="hstack"><button class="btn btn-outline-primary ms-auto">Изменить</button></div>
+                    </form>
+                    <form class="w-50 vstack gap-3" th:object="${password_form}" action="/changePass" method="post">
+                        <input type="hidden" name="sessionId" th:value="${session_id}">
+                        <div class="input-group">
+                            <label class="input-group-text" style="min-width: 20%;">новый пароль:</label>
+                            <input type="password" class="form-control" placeholder="введите пароль..." th:field="*{newPass}">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-group-text" style="min-width: 20%;">подтверждение:</label>
+                            <input type="password" class="form-control" placeholder="введите пароль..." th:field="*{newPassConfirm}">
+                        </div>
+                        <span class="form-text text-danger" th:if="${fail}">пароли не совпадают</span>
+                        <div class="hstack"><button class="btn btn-outline-primary ms-auto">изменить</button></div>
+                    </form>
+                </div>
+
+                <div class="border p-3 vstack">
+                    <div class="input-group" th:unless="${is_owner == true}">
+                        <label class="input-group-text" style="min-width: 10%;">логин:</label>
+                        <input type="email" class="form-control" placeholder="the old login..."
+                               th:placeholder="${user.login}" disabled>
+                    </div>
+                    <form id="ban_global" class="hstack" action="/ban_global" method="get">
+                        <input type="hidden" name="session" th:value="${session_id}">
+                        <input type="hidden" name="user" th:value="${user.id}">
+                        <label class="form-label p-3 m-0 text-center" for="ban_checker">Глобальный бан:</label>
+                        <input class="form-check-input m-0 mx-3 p-2" type="checkbox" th:checked="${user.bannedGlobal}" name="banned"
+                               th:disabled="${is_owner == true || can_ch_roles != true}">
+                        <button th:unless="${is_owner == true || can_ch_roles != true}" class="btn btn-light">подтвердить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TODO -->
+    </body>
+</html>

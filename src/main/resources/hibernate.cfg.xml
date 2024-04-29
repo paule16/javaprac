@@ -15,10 +15,10 @@
 
         <!-- <property name="hibernate.type.json_format_mapper">jackson</property> -->
 
-        <mapping class="com.javaprac.model.User" />
-        <mapping class="com.javaprac.model.Discussion" />
-        <mapping class="com.javaprac.model.Message" />
-        <mapping class="com.javaprac.model.Section" />
+        <mapping class="com.javaprac.webforum.model.User" />
+        <mapping class="com.javaprac.webforum.model.Discussion" />
+        <mapping class="com.javaprac.webforum.model.Message" />
+        <mapping class="com.javaprac.webforum.model.Section" />
 
     </session-factory>
 
