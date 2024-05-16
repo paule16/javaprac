@@ -54,11 +54,11 @@ public class SessionManager {
 
     static class KillTask extends TimerTask {
         long session_id;
-    
+
         public KillTask(long session_id) {
             this.session_id = session_id;
         }
-    
+
         @Override
         public void run() {
             sessions.remove(session_id);

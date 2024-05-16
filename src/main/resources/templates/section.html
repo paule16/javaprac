@@ -1,152 +1,201 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-    <head>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-        <title></title>
 
-        <style>
-            .indent {
-                margin: 5px;
-            }
-            .discussion-name {
-                color: grey;
-                font-weight: bolder;
-            }
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-            .card-body:hover {
-                background-color: rgba(128, 128, 128, 0.235);
-            }
-        </style>
+    <title>[[${section.name}]]</title>
 
-        <script lang="js">
-            function handleBannedChanged(cb_id, section_id, user_id) {
-                const checkbox_value = document.getElementById(cb_id);
-                fetch('/ban_in_section', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
+    <style>
+        .indent {
+            margin: 5px;
+        }
+
+        .discussion-name {
+            color: grey;
+            font-weight: bolder;
+        }
+
+        .card-body:hover {
+            background-color: rgba(128, 128, 128, 0.235);
+        }
+    </style>
+
+    <script>
+        function onBannedChange(id) {
+            let checker = document.getElementById("checker_" + id)
+            let checkval = document.getElementById("checkval_" + id)
+
+            checkval.value = checker.checked
+        }
+
+        $(document).ready(function () {
+            $('#participants_tab_pane').submit(function (e) {
+                e.preventDefault();
+                var formData = $(this).serialize();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/section_participants_ban',
+                    data: formData,
+                    success: function (response) {
+                        alert("Изменения применены!")
                     },
-                    body: JSON.stringify({
-                        checkboxValue: checkbox_value,
-                        section_id: section_id,
-                        user_id: user_id
-                    })
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        // Handle response from Spring controller method
-                        console.log('Checkbox value updated:', data);
-                    })
-                    .catch(error => {
-                        console.error('Error updating checkbox value:', error);
-                    });
-            }
-        </script>
+                    error: function (xhr, status, error) {
+                        alert('Произошла ошибка:', error);
+                    }
+                });
+            });
+            $('#modify_perm_form').submit(function (e) {
+                e.preventDefault();
+                var formData = $(this).serialize();
 
-    </head>
+                $.ajax({
+                    type: 'POST',
+                    url: '/section_modify_permissions',
+                    data: formData,
+                    success: function (response) {
+                        alert("Изменения приняты!")
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Произошла ошибка:', error);
+                    }
+                });
+            });
+        });
+    </script>
 
-    <body>
-        <div th:insert="~{general :: header(true)}"></div>
+</head>
 
-        <div>
-            <div class="border-bottom hstack">
-                <div class="w-50 m-5 vstack gap-4">
-                    <h1 th:text="${section.name}" class="text-uppercase opacity-75">
-                        Название раздела
-                    </h1>
-                    <p th:text="${section.description}">
-                        Описание раздела...
-                    </p>
-                </div>
+<body>
+    <div th:insert="~{general :: header(true, null)}"></div>
 
-                <div class="w-50"></div>
-
-                <div class="vstack border-start px-3 py-2 w-25">
-                    <a class="position-sticky start-100 m-4"
-                       style="width: max-content;"
-                       href="/create_discussion"
-                       th:href="|/create_discussion?section=${section.id}&session=${session_id}|"
-                       th:if="${can_create}">+ создать обсуждение</a>
-                    <a class="btn btn-danger position-sticky top-100 align-self-end"
-                       style="width: fit-content;"
-                       th:href="|/delete_section?section=${section.id}&session=${session_id}|"
-                       th:if="${can_delete}">
-                        Удалить раздел
-                    </a>
-                </div>
+    <div>
+        <div class="border-bottom hstack" style="background-color: aliceblue; max-height: 30%;">
+            <div class="w-50 m-5 vstack gap-4">
+                <h1 th:text="${section.name}" class="text-uppercase opacity-75" style="color: #2b73df;">
+                    Название раздела
+                </h1>
+                <p th:text="${section.description}">
+                    Описание раздела...
+                </p>
             </div>
 
-            <ul class="nav nav-underline nav-fill border-bottom" id="gen_tab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="discussions_tab" data-bs-toggle="tab" data-bs-target="#discussions_tab_pane" type="button" role="tab" aria-controls="discussions_tab_pane" aria-selected="true">Обсуждения</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="participants_tab" data-bs-toggle="tab" data-bs-target="#participants_tab_pane" type="button" role="tab" aria-controls="participants_tab_pane" aria-selected="false">Участники</button>
-                </li>
-            </ul>
+            <div class="w-50"></div>
 
-        </div>
-
-        <div class="tab-content" id="page_content">
-            <div class="tab-pane fade show active" id="discussions_tab_pane" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
-                <h1 style="text-align: center" class="m-5">Список обсуждений</h1>
-                <form role="search" style="margin-right: 30%; margin-left: 30%; margin-top: 1cm; margin-bottom: 1cm;">
-                    <input class="form-control me-2"
-                           type="search" placeholder="Введите название обсуждения..."
-                           aria-label="Поиск">
-                </form>
-
-
-                <div class="list-group d-grid"
-                     style="margin-left: 10%; margin-right: 10%;">
-                    <div class="list-group-item card-body p-4"
-                         th:each="discussion : ${section.discussions}">
-                        <a class=" text-decoration-none text-uppercase discussion-name stretched-link" href="/discussion"
-                           th:text="${discussion.name}" th:href="|/discussion?id=${discussion.id}| + (${session_id != null} ? '&session=' + ${session_id} : '')">Discussion name</a>
-                        <p class="card-text opacity-50" th:text="${discussion.description}">Discussion description...</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-pane fade container" id="participants_tab_pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
-                <h1 style="text-align: center" class="m-5">Участники</h1>
-                <table class="table m-5">
-                    <thead>
-                        <tr>
-                            <th scope="col">Никнейм</th>
-                            <th scope="col">Первое сообщение</th>
-                            <th scope="col">Последнее сообщение</th>
-                            <th scope="col">Количество сообщений</th>
-                            <!-- <th scope="col">Рейтинг</th> -->
-                            <th scope="col">Заблокирован</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="wrapper : ${section.getActiveUsers(null, null)}">
-                            <td th:text="${wrapper.user.nickname}">
-                                Никнейм
-                            </td>
-                            <td th:text="${wrapper.minCreationTime}">
-                                xx:xx:xxxx
-                            </td>
-                            <td th:text="${wrapper.maxCreationTime}">
-                                xx:xx:xxxx
-                            </td>
-                            <td th:text="${wrapper.msgNum}">
-                                xxx
-                            </td>
-                            <!-- <td th:text="${wrapper.rating}">
-                                0
-                            </td> -->
-                            <td>
-                                <input class="form-check-input" type="checkbox" id="ban_of_1"
-                                       onchange="handleBannedChanged('ban_of_1', 1, 1);">
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="vstack border-start px-3 py-2 w-25">
+                <a class="position-sticky start-100 m-4" style="width: max-content;" href="/create_discussion"
+                   th:href="|/create_discussion?section=${section.id}&session=${session_id}|" th:if="${can_create}"
+                   id="create_discussion_button">+ создать обсуждение</a>
+                <a class="btn btn-danger position-sticky top-100 align-self-end" style="width: fit-content;"
+                    th:href="|/delete_section?section=${section.id}&session=${session_id}|" th:if="${can_delete}"
+                    id="delete_discussion_button">Удалить раздел
+                </a>
             </div>
         </div>
-    </body>
+
+        <ul class="nav nav-underline nav-fill border-bottom" id="gen_tab" role="tablist"
+            style="background-color: rgb(225, 234, 241);">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="discussions_tab" data-bs-toggle="tab"
+                    data-bs-target="#discussions_tab_pane" type="button" role="tab" aria-controls="discussions_tab_pane"
+                    aria-selected="true">Обсуждения</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="participants_tab" data-bs-toggle="tab"
+                    data-bs-target="#participants_tab_pane" type="button" role="tab"
+                    aria-controls="participants_tab_pane" aria-selected="false">Участники</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="options_tab" data-bs-toggle="tab" data-bs-target="#options_tab_pane"
+                    type="button" role="tab" aria-controls="options_tab_pane" aria-selected="false">Параметры</button>
+            </li>
+        </ul>
+
+    </div>
+
+    <div class="tab-content" id="page_content">
+        <div class="tab-pane fade show active p-5 gap-5" id="discussions_tab_pane" role="tabpanel"
+            aria-labelledby="home-tab" tabindex="0">
+            <h1 style="text-align: center">Список обсуждений</h1>
+            <form class="w-50 hstack gap-2 mx-auto my-5" method="get">
+                <input type="hidden" name="session" th:value="${session_id}" th:unless="${session_id == null}">
+                <input type="hidden" name="id" th:value="${section.id}">
+
+                <input class="form-control" type="search" placeholder="Введите название обсуждения..." name="search"
+                    aria-label="Поиск" th:value="${search_pattern != null} ? ${search_pattern} : ''" id="search_input">
+                <button class="btn btn-outline-success" id="search_button">Поиск</button>
+                <a th:href="'/section?id=' + ${section.id} + (${session_id != null} ? |&session=${session_id}| : '')"
+                   class="btn btn-outline-danger" th:if="${search_pattern != null}" id="search_reset_button">X</a>
+            </form>
+
+
+            <div class="list-group d-grid" style="margin-left: 10%; margin-right: 10%;" th:unless="${discussions.isEmpty()}">
+                <div class="list-group-item card-body p-4" th:each="discussion, iter : ${discussions}">
+                    <a class=" text-decoration-none text-uppercase discussion-name stretched-link" href="/discussion"
+                        th:text="${discussion.name}" th:id="|discussion_${iter.index}|"
+                        th:href="|/discussion?id=${discussion.id}| + (${session_id != null} ? '&session=' + ${session_id} : '')">Discussion
+                        name</a>
+                    <p class="card-text opacity-50" th:text="${discussion.description}">Discussion description...</p>
+                </div>
+            </div>
+            <h2 style="color: grey; text-align: center;" th:if="${discussions.isEmpty()}">Нет обсуждений</h2>
+        </div>
+
+        <form class="tab-pane fade container" id="participants_tab_pane" role="tabpanel" aria-labelledby="profile-tab"
+            tabindex="1">
+            <input type="hidden" name="sessionId" th:value="${session_id}">
+            <input type="hidden" name="sectionId" th:value="${section.id}">
+
+            <h1 style="text-align: center" class="m-5">Участники</h1>
+            <table class="table m-5">
+                <thead>
+                    <tr>
+                        <th scope="col">Никнейм</th>
+                        <th scope="col">Первое сообщение</th>
+                        <th scope="col">Последнее сообщение</th>
+                        <th scope="col">Количество сообщений</th>
+                        <th scope="col">Заблокирован</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="wrapper : ${section.getActiveUsers(null, null)}">
+                        <input type="hidden" name="userIds" th:value="${wrapper.user.id}">
+                        <input type="hidden" th:id="|checkval_${wrapper.user.id}|" name="userBanChecks"
+                            th:value="${section.isBanned(wrapper.user)}">
+
+                        <td th:text="${wrapper.user.nickname}">
+                            Никнейм
+                        </td>
+                        <td th:text="${wrapper.minCreationTime}">
+                            xx:xx:xxxx
+                        </td>
+                        <td th:text="${wrapper.maxCreationTime}">
+                            xx:xx:xxxx
+                        </td>
+                        <td th:text="${wrapper.msgNum}">
+                            xxx
+                        </td>
+                        <td>
+                            <input class="form-check-input" type="checkbox" th:id="|checker_${wrapper.user.id}|"
+                                th:onchange="|onBannedChange(${wrapper.user.id})|"
+                                th:checked="${section.isBanned(wrapper.user)}">
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <button class="btn btn-outline-success w-100" id="section_table_save_button">Сохранить</button>
+        </form>
+
+        <div class="tab-pane fade p-5 container vstack gap-5" id="options_tab_pane" role="tabpanel"
+            aria-labelledby="home-tab" tabindex="2" th:insert="~{general :: permTable(${section}, ${can_edit})}">
+        </div>
+    </div>
+</body>
+
 </html>

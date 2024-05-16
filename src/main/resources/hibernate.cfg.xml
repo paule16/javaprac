@@ -13,12 +13,13 @@
 
         <property name="connection.pool_size">10</property>
 
-        <!-- <property name="hibernate.type.json_format_mapper">jackson</property> -->
+        <property name="hibernate.search.backend.directory.root">index</property>
 
         <mapping class="com.javaprac.webforum.model.User" />
         <mapping class="com.javaprac.webforum.model.Discussion" />
         <mapping class="com.javaprac.webforum.model.Message" />
         <mapping class="com.javaprac.webforum.model.Section" />
+        <mapping class="com.javaprac.webforum.model.Attachment" />
 
     </session-factory>
 

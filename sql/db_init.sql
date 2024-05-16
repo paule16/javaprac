@@ -29,14 +29,18 @@ CREATE TABLE Messages (
     id INTEGER PRIMARY KEY,
     creator_id INTEGER REFERENCES Users,
     content TEXT NOT NULL,
-    attachments TEXT[],
     likesNum INTEGER NOT NULL DEFAULT 0,
     dislikesNum INTEGER NOT NULL DEFAULT 0,
     creationTime TIMESTAMP NOT NULL,
     discussion_id INTEGER REFERENCES Discussions ON DELETE CASCADE NOT NULL,
-    quote_msg_id INTEGER REFERENCES Messages, -- points to the quoted message
-    quote_start INTEGER, -- offset of the quotation from the start of the quoted message
-    quote_end INTEGER -- number of the last quoted character in the quoted message
+    quote_msg_id INTEGER REFERENCES Messages -- points to the quoted message
+);
+
+CREATE TABLE Attachments (
+    id INTEGER PRIMARY KEY,
+    message_id INTEGER REFERENCES Messages ON DELETE CASCADE NOT NULL,
+    name TEXT NOT NULL,
+    content bytea
 );
 
 CREATE TABLE BannedInSection (
@@ -45,7 +49,20 @@ CREATE TABLE BannedInSection (
     PRIMARY KEY (user_id, section_id)
 );
 
+CREATE TABLE Likes (
+    user_id INTEGER REFERENCES Users,
+    message_id INTEGER REFERENCES Messages ON DELETE CASCADE,
+    PRIMARY KEY (user_id, message_id)
+);
+
+CREATE TABLE Dislikes (
+    user_id INTEGER REFERENCES Users,
+    message_id INTEGER REFERENCES Messages ON DELETE CASCADE,
+    PRIMARY KEY (user_id, message_id)
+);
+
 CREATE SEQUENCE User_seq;
 CREATE SEQUENCE Section_seq;
 CREATE SEQUENCE Discussion_seq;
 CREATE SEQUENCE Message_seq;
+CREATE SEQUENCE Attachments_seq;

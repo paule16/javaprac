@@ -6,9 +6,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.type.SqlTypes;
 
 import com.javaprac.webforum.Permission;
+import com.javaprac.webforum.managers.DiscussionsManager;
+import com.javaprac.webforum.managers.MessagesManager;
 import com.javaprac.webforum.managers.SectionsManager;
 
 import jakarta.persistence.Entity;
@@ -23,6 +27,7 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 @Entity
+@Indexed
 @Table(name = "Sections")
 public class Section {
     @Id
@@ -30,6 +35,7 @@ public class Section {
     @SequenceGenerator(name = "Section_seq", allocationSize = 1)
     private Integer id;
 
+    @FullTextField
     private String name;
 
     private String description;
@@ -38,68 +44,69 @@ public class Section {
     private Map<String, Permission> permissions;
 
     @ManyToMany
-    @JoinTable(
-        name = "BannedInSection",
-        joinColumns =
-            @JoinColumn(name = "section_id", referencedColumnName = "id"),
-        inverseJoinColumns = 
-            @JoinColumn(name = "user_id", referencedColumnName = "id")
-    )
+    @JoinTable(name = "BannedInSection", joinColumns = @JoinColumn(name = "section_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"))
     private List<User> banned_users = new ArrayList<>();
 
     @OneToMany(mappedBy = "section")
     List<Discussion> discussions = new ArrayList<>();
 
-    public boolean equals(Section oth)
-    {
+    public boolean equals(Section oth) {
         if (this == oth) {
             return true;
         }
 
         return oth.id.equals(id) &&
-               oth.name.equals(name) &&
-               oth.description.equals(description) &&
-               oth.permissions.equals(permissions);
+                oth.name.equals(name) &&
+                oth.description.equals(description) &&
+                oth.permissions.equals(permissions);
     }
 
-    public Section() {}
+    public Section() {
+    }
 
-    public Section(String name, String description, Map<String, Permission> perm)
-    {
+    public Section(String name, String description, Map<String, Permission> perm) {
         this.name = name;
         this.description = description;
         this.permissions = perm;
     }
 
-    public Section(String name, String description)
-    {
+    public Section(String name, String description) {
         this.name = name;
         this.description = description;
         this.permissions = Map.of();
     }
 
-    public int getId()
-    {
+    public int getId() {
         return id;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public String getDescription()
-    {
+    public String getDescription() {
         return description;
     }
 
-    public boolean isBanned(User user)
-    {
-        return banned_users.contains(user);
+    public Map<String, Permission> getPermissions() {
+        return permissions;
     }
 
-    public List<Discussion> getDiscussions()
-    {
+    public void setPermissions(Map<String, Permission> permissions) {
+        this.permissions = permissions;
+    }
+
+    public boolean isBanned(User user) {
+
+        for (int i = 0; i < banned_users.size(); i++) {
+            if (banned_users.get(i).equals(user)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<Discussion> getDiscussions() {
         return discussions;
     }
 
@@ -107,8 +114,7 @@ public class Section {
         return permissions.isEmpty() || permissions.containsKey("public");
     }
 
-    public boolean canRead(User user)
-    {
+    public boolean canRead(User user) {
         if (user.getRoles().contains("admin")) {
             return true;
         }
@@ -125,10 +131,8 @@ public class Section {
         return false;
     }
 
-    public boolean canWrite(User user)
-    {
-        if (user.getRoles().contains("admin"))
-        {
+    public boolean canWrite(User user) {
+        if (user.getRoles().contains("admin")) {
             return true;
         }
 
@@ -152,8 +156,7 @@ public class Section {
         return false;
     }
 
-    public boolean canEdit(User user)
-    {
+    public boolean canEdit(User user) {
         if (user.getRoles().contains("admin")) {
             return true;
         }
@@ -182,9 +185,17 @@ public class Section {
         return user.isAdmin();
     }
 
-    public void ban(User user)
-    {
+    public void ban(User user) {
         banned_users.add(user);
+    }
+
+    public void unban(User user) {
+        for (int i = 0; i < banned_users.size(); i++) {
+            if (banned_users.get(i).equals(user)) {
+                banned_users.remove(i);
+                break;
+            }
+        }
     }
 
     public static class ActiveUsersWrapper {
@@ -209,8 +220,7 @@ public class Section {
             return msgNum;
         }
 
-        public ActiveUsersWrapper(User user, LocalDateTime min_time, LocalDateTime max_time, Long msgNum)
-        {
+        public ActiveUsersWrapper(User user, LocalDateTime min_time, LocalDateTime max_time, Long msgNum) {
             this.user = user;
             this.minCreationTime = min_time;
             this.maxCreationTime = max_time;
@@ -218,8 +228,17 @@ public class Section {
         }
     }
 
-    public List<ActiveUsersWrapper> getActiveUsers(LocalDateTime from, LocalDateTime to)
-    {
+    public List<ActiveUsersWrapper> getActiveUsers(LocalDateTime from, LocalDateTime to) {
         return (new SectionsManager()).getActiveUsers(getId(), from, to);
+    }
+
+    public List<Discussion> searchDiscussionsByName(String pattern) {
+        DiscussionsManager dm = new DiscussionsManager();
+        return dm.searchInSectionByName(getId(), pattern);
+    }
+
+    public List<Message> searchMessagesByContent(String pattern) {
+        MessagesManager mm = new MessagesManager();
+        return mm.searchInSectionByContent(getId(), pattern);
     }
 }

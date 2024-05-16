@@ -8,18 +8,15 @@ public enum Permission implements Serializable {
 
     private int id;
 
-    private Permission(int id)
-    {
+    private Permission(int id) {
         this.id = id;
     }
 
-    public boolean allow_write()
-    {
+    public boolean allow_write() {
         return this.id >= WRITE.id;
     }
 
-    public boolean allow_edit()
-    {
+    public boolean allow_edit() {
         return this.id >= EDIT.id;
     }
 }

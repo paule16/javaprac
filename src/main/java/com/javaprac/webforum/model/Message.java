@@ -1,23 +1,30 @@
 package com.javaprac.webforum.model;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+
 import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
-import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "Messages")
+@Indexed
 public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "Message_seq")
@@ -29,9 +36,11 @@ public class Message {
     private User creator;
 
     @Column(name = "content")
+    @FullTextField
     private String text;
 
-    private List<String> attachments;
+    @OneToMany(mappedBy = "message", fetch = FetchType.LAZY)
+    List<Attachment> attachments = new ArrayList<>();
 
     private Integer likesNum = 0;
 
@@ -41,162 +50,136 @@ public class Message {
 
     @ManyToOne(optional = false)
     @JoinColumn(updatable = false)
+    @IndexedEmbedded(includeEmbeddedObjectId = true)
     private Discussion discussion;
 
-    @Embedded
-    private Quote quote;
+    @ManyToOne
+    @JoinColumn(name = "quote_msg_id")
+    private Message quoted;
 
-    public boolean equals(Message oth)
-    {
+    @OneToMany(mappedBy = "quoted")
+    private List<Message> quoters = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(name = "Likes", joinColumns = @JoinColumn(name = "message_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"))
+    private List<User> likers = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(name = "Dislikes", joinColumns = @JoinColumn(name = "message_id", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"))
+    private List<User> dislikers = new ArrayList<>();
+
+    public boolean equals(Message oth) {
         if (this == oth) {
             return true;
         }
 
         return oth.id.equals(id) &&
-               oth.text.equals(text) &&
-               oth.attachments.equals(attachments) &&
-               oth.likesNum.equals(likesNum) &&
-               oth.dislikesNum.equals(dislikesNum) &&
-               oth.creationTime.equals(creationTime) &&
-               ((oth.quote == null && quote == null) || oth.quote.equals(quote)) &&
-               oth.discussion.equals(discussion) &&
-               oth.creator.equals(creator);
+                oth.text.equals(text) &&
+                oth.attachments.equals(attachments) &&
+                oth.likesNum.equals(likesNum) &&
+                oth.dislikesNum.equals(dislikesNum) &&
+                oth.creationTime.equals(creationTime) &&
+                oth.quoted.equals(oth.quoted) &&
+                oth.discussion.equals(discussion) &&
+                oth.creator.equals(creator);
     }
 
-    public Message() {}
+    public Message() {
+    }
 
     public Message(String text,
-                   Message quoted,
-                   int quote_start,
-                   int quote_end,
-                   List<String> attachments,
-                   Discussion discussion,
-                   User creator)
-    {
+            Message quoted,
+            Discussion discussion,
+            User creator) {
         this.text = text;
-        this.quote = new Quote(quoted, quote_start, quote_end);
-        this.attachments = attachments;
+        this.quoted = quoted;
         this.discussion = discussion;
         this.creator = creator;
         this.creationTime = LocalDateTime.now();
     }
 
     public Message(String text,
-                   List<String> attachments,
-                   Discussion discussion,
-                   User creator)
-    {
+            Discussion discussion,
+            User creator) {
         this.text = text;
-        this.attachments = attachments;
         this.discussion = discussion;
         this.creator = creator;
         this.creationTime = LocalDateTime.now();
     }
 
-    public int getId()
-    {
+    public int getId() {
         return id;
     }
 
-    public User getCreator()
-    {
+    public User getCreator() {
         return creator;
     }
 
-    public Discussion getDiscussion()
-    {
+    public Discussion getDiscussion() {
         return discussion;
     }
 
-    public String getText()
-    {
+    public String getText() {
         return text;
     }
 
-    public String getText(int start, int end)
-    {
-        return text.substring(start, end);
+    public Message getQuoted() {
+        return quoted;
     }
 
-    public Message getQuoted()
-    {
-        if (quote == null) {
-            return null;
-        } else {
-            return quote.getMessage();
-        }
+    public List<Message> getQuoters() {
+        return quoters;
     }
 
-    public String getQuote()
-    {
-        if (quote == null) {
-            return null;
-        } else {
-            return quote.getQuote();
-        }
-    }
-
-    public List<String> getAttachments()
-    {
+    public List<Attachment> getAttachments() {
         return attachments;
     }
 
-    public int getLikesNum()
-    {
+    public int getLikesNum() {
         return likesNum;
     }
 
-    public int getDislikesNum()
-    {
+    public int like(User user) {
+        for (int i = 0; i < likers.size(); i++) {
+            if (likers.get(i).equals(user)) {
+                likesNum--;
+                likers.remove(i);
+                return -1;
+            }
+        }
+        likesNum++;
+        likers.add(user);
+        return 1;
+    }
+
+    public int getDislikesNum() {
         return dislikesNum;
     }
 
-    public LocalDateTime getCreationTime()
-    {
+    public int dislike(User user) {
+        for (int i = 0; i < dislikers.size(); i++) {
+            if (dislikers.get(i).equals(user)) {
+                dislikesNum--;
+                dislikers.remove(i);
+                return -1;
+            }
+        }
+        dislikesNum++;
+        dislikers.add(user);
+        return 1;
+    }
+
+    public LocalDateTime getCreationTime() {
         return creationTime;
     }
 
-}
-
-@Embeddable
-class Quote implements Serializable {
-    @ManyToOne
-    @JoinColumn(name = "quote_msg_id")
-    private Message message;
-
-    @Column(name = "quote_start")
-    private Integer start;
-
-    @Column(name = "quote_end")
-    private Integer end;
-
-    public boolean equals(Quote oth)
-    {
-        // if (this == oth) {
-        //     return true;
-        // }
-
-        return oth.start.equals(start) &&
-               oth.end.equals(end) &&
-               oth.message.equals(message);
-    }
-
-    public Quote() {}
-
-    public Quote(Message message, int start, int end)
-    {
-        this.message = message;
-        this.start = start;
-        this.end = end;
-    }
-
-    public Message getMessage()
-    {
-        return message;
-    }
-
-    public String getQuote()
-    {
-        return message.getText(start, end);
+    public String printCreationTime() {
+        return String.format(
+                "%02d:%02d %02d.%02d.%04d",
+                creationTime.getHour(),
+                creationTime.getMinute(),
+                creationTime.getDayOfMonth(),
+                creationTime.getMonthValue(),
+                creationTime.getYear());
     }
 }
